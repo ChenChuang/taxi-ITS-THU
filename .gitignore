@@ -37,6 +37,15 @@ nosetests.xml
 .project
 .pydevproject
 
+# R
+
+# History files
+.Rhistory
+.RData
+# Example code in package build process
+*-Ex.R
+
+.csv
 
 # folder
 
@@ -45,4 +54,7 @@ analysis/osm/
 pgrouting-web/
 qgis/
 tools/
+
+.svn/
+base/.svn/
 
