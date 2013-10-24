@@ -1,0 +1,58 @@
+import ConfigParser
+
+config = ConfigParser.ConfigParser() 
+config.read("config.ini")
+
+mysql_hostname = config.get("mysql","hostname")
+mysql_username = config.get("mysql","username")
+mysql_passwd = config.get("mysql","passwd")
+mysql_dbname = config.get("mysql","dbname")
+
+dat_data_dir = config.get("data","dat_data_dir")
+dat_reg = config.get("data","dat_reg")
+txt_data_dir = config.get("data","txt_data_dir")
+txt_reg = config.get("data","txt_reg")
+
+query_output_lines = int(config.get("query","query_output_lines"))
+query_output_dir = config.get("query","query_output_dir")
+
+proc_input_dir = config.get("proc","proc_input_dir")
+proc_output_lines = int(config.get("proc","proc_output_lines"))
+proc_output_dir = config.get("proc","proc_output_dir")
+
+global mysql_hostname
+global mysql_username
+global mysql_passwd
+global mysql_dbname
+
+global dat_data_dir 
+global dat_reg
+global txt_data_dir
+global txt_reg
+
+global query_output_lines
+global query_output_dir
+
+global proc_input_dir
+global proc_output_lines
+global proc_output_dir
+
+print "---config---"
+print "hostname =",str(mysql_hostname)
+print "username =",mysql_username
+print "dbname =",mysql_dbname
+print ""
+print ".dat file dir =",dat_data_dir
+print ".dat file regular pattern =",dat_reg
+print ".txt file dir =",txt_data_dir
+print ".txt file regular pattern =",txt_reg
+print ""
+print "max lines of query output file =",query_output_lines
+print "query results will be loaded into:",query_output_dir
+print ""
+print "proc input dir:",proc_input_dir
+print "max lines of proc output file =",proc_output_lines
+print "proc results will be loaded into:",proc_output_dir
+print ""
+print "------------"
+

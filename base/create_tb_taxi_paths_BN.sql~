@@ -1,0 +1,9 @@
+drop table taxi_paths_BN:;
+
+create table taxi_paths_BN(
+	id BIGSERIAL,
+	tid int,
+	way_ids text,
+	path_geom geometry,
+
+	primary key(id));

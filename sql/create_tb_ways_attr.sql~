@@ -1,0 +1,6 @@
+drop table ways_attr;
+
+create table ways_attr(
+	wid int not null,
+	used_times int not null default 0,
+	primary key(wid));

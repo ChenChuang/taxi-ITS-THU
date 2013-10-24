@@ -1,0 +1,28 @@
+[mysql]
+hostname = 127.0.0.1 ;address of mysql server
+username = root ;username of mysql server
+passwd = ITS2013tsinghuaszee
+dbname = db_beijing_taxi ;used db
+
+[data]
+dat_data_dir = /home/chenchuang/beijing_taxi_data/temp_binary_data/ ;'/' at the end needed
+dat_reg = ^2009\d\d\d\d$
+txt_data_dir = /home/chenchuang/beijing_taxi_data/temp_text_data/ ;'/' at the end needed
+txt_reg = ^2009\d\d\d\d$
+
+[query]
+query_output_lines = 10000
+query_output_dir = /home/chenchuang/beijing_taxi_query_output/by_cuid/
+
+[proc]
+proc_output_lines = 10000
+
+proc_input_dir = /home/chenchuang/beijing_taxi_data/by_cuid/
+;proc_input_dir = /home/chenchuang/beijing_taxi_proc_output/occupied/
+
+;proc_output_dir = /home/chenchuang/beijing_taxi_proc_output/occupied/
+;proc_output_dir = /home/chenchuang/beijing_taxi_proc_output/start_dest/
+;proc_output_dir = /home/chenchuang/beijing_taxi_proc_output/trajectory/
+;proc_output_dir = /home/chenchuang/beijing_taxi_proc_output/georss/
+proc_output_dir = /home/chenchuang/beijing_taxi_proc_output/geojson/
+

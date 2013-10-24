@@ -1,0 +1,13 @@
+<?php
+	$tid = $_REQUEST['tid']; 
+	$conn = pg_connect("dbname=beijing_taxi host=localhost user=postgres");
+	$sql = "insert into taxi_paths select * from taxi_paths_BN where tid=".$tid;
+	$result = pg_query($conn,$sql);
+	if (pg_num_rows($result)) {
+    	echo ":)";
+	} else {
+        echo ":(";
+    }
+    pg_close($conn);
+?>
+

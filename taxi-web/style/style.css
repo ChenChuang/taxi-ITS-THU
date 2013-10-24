@@ -1,0 +1,178 @@
+
+body {
+    background: #fff;
+    margin: 1em 1em;
+}
+
+.olControlAttribution {
+    bottom: 5px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #666666;
+    background-color: transparent;
+    font: 100% 'Lucida Grande', Verdana, Geneva, Lucida, Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding-top: 0;
+}
+h1 {
+    font-size: 160%;
+    margin-bottom: 0.5em;
+}
+
+#titlediv{
+	width: 300px;
+	float: left;
+}
+#getdatadiv{
+	width: auto;
+	float: right;
+}
+#filename_tx{
+	width: 200px;
+	float: right;
+	margin-right: 0.5em;
+}
+#getdata_btn{
+	float: right;
+	margin-right: 0.3em;
+}
+#clear_btn{
+	float: right;
+}
+#infos_btn{
+	float: right;
+	margin-right: 2em;
+}
+
+#restore_btn{
+	float: right;
+	margin-right: 0.3em;
+}
+#hold_lb{
+	float: right;
+	margin-right: 0.8em;
+	margin-top: 0.35em;	
+}
+
+
+#getdatadiv2{
+	width: auto;
+	float: left;
+	margin-left: 28em;
+}
+#ok_btn{
+	float: left;
+	margin-right: 0em;
+	margin-left: 0.8em;
+}
+#no_btn{
+	float: left;
+	margin-right: 0em;
+	margin-left: 0.0em;
+}
+#next_btn{
+	float: left;
+	margin-right: 0.0em;
+	margin-left: 0.8em;
+}
+#info_lb{
+	float: left;
+	margin-left: 1em;
+	margin-top: 0.35em;	
+}
+#sep_lb{
+	float: right;
+	margin-left: 0.3em;
+	margin-right: 0.3em;
+	margin-top: 0.35em;
+}
+#totid_tx{
+	width: 80px;
+	float: right;
+	margin-left: 0.0em;
+}
+#fromtid_tx{
+	width: 80px;
+	float: right;
+	margin-right: 0.0em;
+}
+#tids_btn{
+	float: right;
+	margin-right: 0.8em;
+}
+#tid_info_lb{
+	float: right;
+	margin-right: 1em;
+	margin-top: 0.35em;	
+}
+.nav.nav-pills{
+	margin-top: -2px;
+	height: 0px;
+}
+.topdiv {
+	width: auto;
+	height: 40px;
+	float: top;
+}
+
+.mainmap {
+	width: auto;
+	float: top;
+	height: 700px;
+	border: 1px solid #ccc;
+}
+
+/* mobile specific */
+@media only screen and (max-width: 600px) {
+    body {
+        height           : 100%;
+        margin           : 0;
+        padding          : 0;
+        width            : 100%;
+    }
+    #map {
+        background : #7391ad;
+        width      : 100%;
+    }
+    #map {
+        border : 0;
+        height : 250px;
+    }
+    #title {
+        font-size   : 1.3em;
+        line-height : 2em;
+        text-indent : 1em;
+        margin      : 0;
+        padding     : 0;
+    }
+    #docs {
+        bottom     : 0;
+        padding    : 1em;
+    }
+    #shortdesc {
+        color      : #aaa;
+        font-size  : 0.8em;
+        padding    : 1em;
+        text-align : right;
+    }
+    #tags {
+        display : none;
+    }
+}
+@media only screen and (orientation: landscape) and (max-width: 600px) {
+    #shortdesc {
+       float: right;
+       width: 25%;
+    }
+    #map {
+        width: 70%;
+    }
+    #docs {
+        font-size: 12px;
+    }
+}
+body {
+    -webkit-text-size-adjust: none;
+}
+

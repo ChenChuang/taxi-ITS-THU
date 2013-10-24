@@ -1,0 +1,20 @@
+<html>
+<body>
+<?php
+function getfiles($str){
+	$dir = opendir($str);
+    if($dir != false){
+        while(false !== ($file = readdir ($dir))){
+			$ext = strtolower(pathinfo($file_name)["extension"]);
+            if($ext != ".json"){
+                echo $file;
+            }
+        }
+        closedir($dir);
+    }
+}
+getfiles("../data");
+?>
+</body>
+</html>
+

@@ -1,0 +1,9 @@
+drop table taxi_tracks;
+
+create table taxi_tracks(
+	id BIGSERIAL not null auto_increment,
+	cuid int,
+	track_geom geometry,
+	track_desc text,
+
+	primary key(id));

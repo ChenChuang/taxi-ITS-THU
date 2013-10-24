@@ -1,0 +1,17 @@
+<html>
+<body>
+<?php
+	$dir = opendir("")
+    if($dir != false){
+        while(false !== ($file = readdir ($dir))){
+			$ext = strtolower(pathinfo($file_name)["extension"]);
+            if($ext != ".json"){
+                echo $file;
+            }
+        }
+        closedir($dir);
+    }
+?>
+</body>
+</html>
+
