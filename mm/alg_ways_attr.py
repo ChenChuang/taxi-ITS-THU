@@ -13,9 +13,9 @@ from ccdef import *
 
 import alg_bn as alg
 
-gdag = None
-gpdag = list()
-ges = list()
+
+intervals = [0.0, 1.0]
+resolution = 0.1
 
 ways_weight = None
 ways_used_times = None
@@ -37,8 +37,6 @@ def prepare(gw):
     ways_weight = wadb.read_attr('weight')
     ways_used_times = wadb.read_attr('used_times')
     ways_used_interval = used_intervals2ints(wadb.read_attr('used_interval'))
-    if ways_used_interval is None:
-        print "aa"
     del wadb
 
     global ways_length
@@ -57,9 +55,9 @@ def update_ways_attrs(path, track):
     wids = path.get_ways()
     conf = path.confidence(track)
 
-    s = 0.0
-    resol = 0.1
-    max_s = 1.0
+    s = intervals[0]
+    resol = resolution
+    max_s = intervals[1]
     path_length = path.length()
 
     for wid in wids:
@@ -93,7 +91,8 @@ def write_ways_attrs():
 
 def init_ways_attrs_tb():
     wadb = cdb.new_way_attr_db(tbname=ways_attrs_tbname)
-    wadb.init_tb(attrs_values={"used_times":0, "weight":0, "used_interval":','.join(['0']*10)})
+    interval_num = int((intervals[1] - intervals[0]) / resolution)
+    wadb.init_tb(attrs_values={"used_times":0, "weight":0, "used_interval":','.join(['0']*intervals_num)})
     del wadb
 
 def match(gw, track):

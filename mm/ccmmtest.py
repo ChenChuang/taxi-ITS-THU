@@ -10,8 +10,7 @@ import ccdb as cdb
 import alg_bn as abn
 import alg_st as ast
 import alg_iv as aiv
-import alg_ut as aut
-
+import alg_ut_2 as aut
 
 algs = {'BN':abn, 'ST':ast, 'IV':aiv, 'UT':aut}
 
@@ -33,7 +32,7 @@ def mm(tid, method):
 
     pt2j.write_p_geojson(path)
 
-    if METHOD != 'UT':
+    if method != 'UT':
         vds = dag.nodes(True)
         vdsd = {}
         for vd in vds:

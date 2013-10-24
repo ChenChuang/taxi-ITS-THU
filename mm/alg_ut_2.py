@@ -11,6 +11,11 @@ import ccgraph as cg
 import ccdb as cdb
 from ccdef import *
 
+from alg_ways_attr import intervals as awa_intervals
+from alg_ways_attr import resolution as awa_resolution
+
+awa_intervals_num = int((awa_intervals[1] - awa_intervals[0]) / awa_resolution)
+
 ways_attrs_tbname = "ways_ut_attr_2"
 
 ways_used_times = None
@@ -24,6 +29,12 @@ def prepare(gw):
     global ways_used_times, ways_used_interval
     ways_used_times = wadb.read_attr('used_times')
     ways_used_interval = [map(int, strs.split(",")) for strs in wadb.read_attr('used_interval')]
+
+    def normalize(xs):
+        m = max(xs)+1
+        return [float(x+1) / m for x in xs]
+
+    ways_used_interval = [normalize(xs) for xs in ways_used_interval]
     del wadb
     set_graph_weight(gw)
 
@@ -58,8 +69,14 @@ def set_graph_weight(gw):
         except KeyError, e:
             pass
 
-def best_path_from_to(gw, origin, destination):
-    
+def shortest_path_from_to(gw, origin, destination, **kwargs):
+    return gw.shortest_path_from_to(origin, destination)
+
+def best_path_from_to(gw, origin, destination, **kwargs):
+
+    current = kwargs['current']
+    whole = kwargs['whole']
+
     # try to retrive the best path between origin and dest is in buffer
     global best_paths_buffer, shortest_paths_buffer
     try:
@@ -151,7 +168,12 @@ def best_path_from_to(gw, origin, destination):
                 # check if destination is reachable from cv within max_l
                 cv_pre = v
                 cv_s_l = s_l + e_l
-                cv_s_u = s_u + e_u
+
+                # use model of used_interval
+                e_u = e_u * ways_used_interval[e_wid-1][min(awa_intervals_num-1, int(math.floor((cv_s_l + current) / whole)))]
+                ############################
+
+                cv_s_u = s_u + e_u                
                 cv_s_t = s_t + e_t
                 cv_s_lu = s_lu + e_lu
                 cv_n_e = n_e + 1
@@ -234,17 +256,23 @@ def match(gw, track):
     best_paths_buffer = dict()
     shortest_paths_buffer = dict()
 
-    p = track2path(gw, track)
-    if p is None:
-        print 'failed'
+    shortest_p = track2path(gw, track, shortest_path_from_to)
+    if shortest_p is None:
+        print 'failed shortest'
+        return None
+    shortest = shortest_p.length()
+
+    best_p = track2path(gw, track, best_path_from_to, whole = shortest)
+    if best_p is None:
+        print 'failed best'
         return None
 
     # update_ways_weight(p, track)
     # update_ways_weight_proj(p, track)
 
-    return p
+    return best_p
 
-def track2path(gw, track, k=5, r=0.1, sigma=0.02):
+def track2path(gw, track, path_selector, k=5, r=0.1, sigma=0.02, **kwargs):
     dag = nx.DiGraph()
     rds = track.aggre_records()
     projss = []
@@ -306,6 +334,7 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
             s_ii = ii_proj['s']
             t_ii = ii_proj['t']
             speed_ii = gw.G[s_ii][t_ii]['speed']
+            sw_ii = min_sw_dict[(i,ii)]
             
             # for every projection candidate jj of j=i+1 gps-record
             for jj in range(0,len(j_projs)):
@@ -328,7 +357,7 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
                     if w_tii_sjj < 0:
                         ## p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj)
                         ## p_tii_sjj = best_path_from_to_slow(gw, t_ii, s_jj)
-                        p_tii_sjj = best_path_from_to(gw, t_ii, s_jj)
+                        p_tii_sjj = path_selector(gw, t_ii, s_jj, current = sw_ii, **kwargs)
 
                         if not len(p_tii_sjj) > 0:
                             w_tii_sjj = INF
@@ -338,7 +367,7 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
                 else:
                     ## p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj)
                     ## p_tii_sjj = best_path_from_to_slow(gw, t_ii, s_jj)
-                    p_tii_sjj = best_path_from_to(gw, t_ii, s_jj)
+                    p_tii_sjj = path_selector(gw, t_ii, s_jj, current = sw_ii, **kwargs)
 
                     if not len(p_tii_sjj) > 0:
                         w_tii_sjj = INF

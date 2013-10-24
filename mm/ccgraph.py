@@ -271,7 +271,7 @@ class GraphWrapper:
             print e
             return False
 
-    def shortest_path_from_to(self, origin, destination, method='astar'):
+    def shortest_path_from_to(self, origin, destination, method='astar', **kwargs):
         if method == 'astar':
             pass
 
