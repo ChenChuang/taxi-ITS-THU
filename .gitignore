@@ -42,10 +42,13 @@ nosetests.xml
 # History files
 .Rhistory
 .RData
+Rprof.out
 # Example code in package build process
 *-Ex.R
 
-.csv
+*.csv
+*.pdf
+*.*~
 
 # folder
 
