@@ -1,5 +1,0 @@
-drop view ways_and_attrs;
-
-create view ways_and_attrs
-as
-select ways.id, ways.geom_way, wattr.* from ways, ways_ut_attr as wattr where ways.id = wattr.wid;

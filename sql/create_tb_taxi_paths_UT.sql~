@@ -1,7 +1,0 @@
-drop table taxi_paths_UT;
-
-create table taxi_paths_UT(
-	tid int not null references taxi_tracks(id),
-	way_ids text not null,
-	path_geom geometry not null,
-	primary key(tid));

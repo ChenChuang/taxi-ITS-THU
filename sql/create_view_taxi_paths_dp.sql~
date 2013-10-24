@@ -1,5 +1,0 @@
-drop view taxi_paths_dp;
-
-create view taxi_paths_dp
-as
-select * from taxi_paths where tid in (select tid from taxi_paths_attr where valid > 0);
