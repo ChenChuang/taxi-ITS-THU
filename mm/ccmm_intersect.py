@@ -19,11 +19,11 @@ TRACKS_TO_TID = 2638410
 
 TID_DP_TBNAME = "taxi_tid_dp_1"
 
-METHOD = 'BN'
+METHOD = 'bn'
 alg = abn
 
 gw = cg.new_gw()
-trd = cdb.new_track_reader_for_purpose(purpose="MM")
+trd = cdb.new_track_reader_for_purpose(purpose="mm")
 pwd = cdb.new_path_writer_for_method(method = METHOD)
 pawd = cdb.new_path_attr_writer_for_method(method = METHOD)
 tdpdb = cdb.new_tid_dp_db(tbname=TID_DP_TBNAME)

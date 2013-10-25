@@ -10,9 +10,10 @@ import ccdb as cdb
 import alg_bn as abn
 import alg_st as ast
 import alg_iv as aiv
-import alg_ut_2 as aut
+import alg_ut as aut
+import alg_uti as auti
 
-algs = {'BN':abn, 'ST':ast, 'IV':aiv, 'UT':aut}
+algs = {'bn':abn, 'st':ast, 'iv':aiv, 'ut':aut, 'uti':auti}
 
 def mm(tid, method):
     alg = algs[method]
@@ -31,12 +32,6 @@ def mm(tid, method):
     path = alg.match(gw, track)
 
     pt2j.write_p_geojson(path)
-
-    if method != 'UT':
-        vds = dag.nodes(True)
-        vdsd = {}
-        for vd in vds:
-            vdsd[vd[0]] = vd[1]
 
     ## pwd.insert_update(path)
 

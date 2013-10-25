@@ -5,22 +5,14 @@ import cctrack as ct
 import ccgraph as cg
 
 def tbname_of_method(method):
-    if method == 'BN':
-        return 'taxi_paths_BN'
-    elif method == 'ST':
-        return 'taxi_paths_ST'
-    elif method == 'IV':
-        return 'taxi_paths_IV'
-    elif method == 'UT':
-        return 'taxi_paths_UT'
+    if method in ['bn','st','iv','ut','uti']:
+        return 'taxi_paths_' + method
     else:
         return None
 
 def tbname_of_purpose(purpose):
-    if purpose == 'DP':
-        return 'taxi_tracks_dp'
-    elif purpose == 'MM':
-        return 'taxi_tracks_mm'
+    if purpose in ['dp','mm']:
+        return 'taxi_tracks_' + purpose
     else:
         return None
 

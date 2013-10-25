@@ -9,7 +9,7 @@ import ccgraph as cg
 import ccdb as cdb
 
 def check_method(method):
-    if method in ['BN','ST','IV','UT']:
+    if method in ['bn','st','iv','ut','uti']:
         return True
     return False
 

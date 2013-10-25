@@ -4,12 +4,12 @@ import ccgraph as cg
 def insert_paths_attr():
     gw = cg.new_gw()
 
-    prd = cdb.new_path_reader_for_method(method='BN', gw=gw, limit=10000, offset=0)
+    prd = cdb.new_path_reader_for_method(method='bn', gw=gw, limit=10000, offset=0)
     if prd is None:
         return
     trd = cdb.new_track_reader()
     
-    pawd = cdb.new_path_attr_writer('taxi_paths_BN_attr')
+    pawd = cdb.new_path_attr_writer('taxi_paths_bn_attr')
 
     path = prd.fetch_one()    
     while path is not None:

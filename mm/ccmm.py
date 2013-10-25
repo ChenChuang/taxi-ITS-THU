@@ -11,6 +11,7 @@ import alg_bn as abn
 import alg_st as ast
 import alg_iv as aiv
 import alg_ut as aut
+import alg_uti as auti
 
 import networkx as nx
 #import matplotlib.pyplot as plt
@@ -21,16 +22,17 @@ TRACKS_TO_ROW = 10000
 TRACKS_FROM_TID = 1
 TRACKS_TO_TID = 10000
 
-#METHOD = 'BN'
-#METHOD = 'ST'
-#METHOD = 'IV'
-METHOD = 'UT'
+#METHOD = 'bn'
+#METHOD = 'st'
+#METHOD = 'iv'
+METHOD = 'ut'
+METHOD = 'uti'
 
-algs = {'BN':abn, 'ST':ast, 'IV':aiv, 'UT':aut}
+algs = {'bn':abn, 'st':ast, 'iv':aiv, 'ut':aut, 'uti':auti}
 alg = algs[METHOD]
 
 gw = cg.new_gw()
-trd = cdb.new_track_reader_for_purpose(purpose="MM")
+trd = cdb.new_track_reader_for_purpose(purpose="mm")
 pwd = cdb.new_path_writer_for_method(method = METHOD)
 pawd = cdb.new_path_attr_writer_for_method(method = METHOD)
 pt2j = cj.new_pt2geojson(method = METHOD)

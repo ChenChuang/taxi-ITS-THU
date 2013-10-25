@@ -8,13 +8,13 @@ import ccdb as cdb
 
 import alg_ways_attr as alg
 
-TRACKS_FROM_TID = 1
-TRACKS_TO_TID = 100000
+TRACKS_FROM_TID = 150001
+TRACKS_TO_TID = 350000
 
 gw = cg.new_gw()
-trd = cdb.new_track_reader_for_purpose(purpose="MM")
+trd = cdb.new_track_reader_for_purpose(purpose="mm")
 
-alg.init_ways_attrs_tb()
+# alg.init_ways_attrs_tb()
 
 def match(track):
     
