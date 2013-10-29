@@ -59,7 +59,7 @@ class PT2Geojson:
         geo = {}
         geo["type"] = "LineString"
         lonlats = path.get_lonlats()
-        if not len(lonlats) > 0:
+        if lonlats is None or len(lonlats) == 0:
             return False
         
         geo["coordinates"] = lonlats

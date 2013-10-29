@@ -67,6 +67,40 @@ class Path:
             l = l + self.gw.G[e[0]][e[1]]['length']
         return l
 
+    def precise_length(self, orig_lonlat, dest_lonlat):
+        if len(self.es) == 0 and self.gw != None:
+            self.get_es_from_ways()
+
+        if len(self.es) == 0:
+            l = 0
+        if len(self.es) == 1:            
+            l = self.gw.proj_p2edge(orig_lonlat, self.es[0])['l_t'] - self.gw.proj_p2edge(dest_lonlat, self.es[0])['l_t']
+        else:
+            l = self.gw.proj_p2edge(orig_lonlat, self.es[0])['l_t'] + self.gw.proj_p2edge(dest_lonlat, self.es[-1])['l_s']
+            for e in self.es[1:-1]:
+                l += self.gw.G[e[0]][e[1]]['length']
+        return l
+    
+    def precise_time(self, orig_lonlat, dest_lonlat):
+        if len(self.es) == 0 and self.gw != None:
+            self.get_es_from_ways()
+
+        if len(self.es) == 0:
+            t = 0
+        if len(self.es) == 1:
+            e = self.es[0]
+            l = self.gw.proj_p2edge(orig_lonlat, e)['l_t'] - self.gw.proj_p2edge(dest_lonlat, e)['l_t']
+            t = l / self.gw.G[e[0]][e[1]]['speed']
+        else:
+            e = self.es[0]
+            t1 = self.gw.proj_p2edge(orig_lonlat, e)['l_t'] / self.gw.G[e[0]][e[1]]['speed']
+            e = self.es[-1]
+            t2 = self.gw.proj_p2edge(dest_lonlat, e)['l_s'] / self.gw.G[e[0]][e[1]]['speed']
+            t = t1 + t2
+            for e in self.es[1:-1]:
+                t += self.gw.G[e[0]][e[1]]['length'] / self.gw.G[e[0]][e[1]]['speed']
+        return t
+ 
     def travel_time(self):
         t = 0.0
         for e in self.es:
@@ -190,7 +224,6 @@ class Path:
             if d_min < INF:
                 proj_lonlats.append(proj_lonlat)
         return proj_lonlats
-
 
 
 

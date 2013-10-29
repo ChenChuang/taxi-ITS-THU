@@ -2,6 +2,7 @@ import sys
 import operator
 import time
 import math
+import traceback
 from scipy.stats import norm
 import networkx as nx
 import cctrack as ct
@@ -14,16 +15,15 @@ from ccdef import *
 ways_attrs_tbname = "ways_ut_attr_2"
 
 ways_used_times = None
-ways_used_interval = None
 
 best_paths_buffer = dict()
-shortest_paths_buffer = dict()
+shortest_t_paths_buffer = dict()
+shortest_l_paths_buffer = dict()
 
 def prepare(gw):
     wadb = cdb.new_way_attr_db(tbname=ways_attrs_tbname)
-    global ways_used_times, ways_used_interval
+    global ways_used_times
     ways_used_times = wadb.read_attr('used_times')
-    ways_used_interval = [map(int, strs.split(",")) for strs in wadb.read_attr('used_interval')]
     del wadb
     set_graph_weight(gw)
 
@@ -42,14 +42,14 @@ def set_graph_weight(gw):
         edge_time = gw.G[s][t]['length'] / gw.G[s][t]['speed']
         edge_length = gw.G[s][t]['length']
         
-        ## edge_w = 1
+        edge_w = 1
         ## edge_w = edge_time / (2 - math.exp(-weight))
         ## edge_w = edge_time / (2 - math.exp(-used_times))
         ## edge_w = 1 / (0.1 + 0.9*(used_times / max_used_times))
         ## edge_w = edge_time / (1 + used_times / max_used_times)
         ## edge_w = edge_length / (0.01 + used_times / max_used_times)
         ## edge_w = edge_length / (1 + math.atan(0.003*(used_times - 210))/math.pi + 0.5)
-        edge_w = edge_length
+        ## edge_w = edge_length
         ## edge_w = edge_time
         
         gw.G[s][t]['weight'] = edge_w
@@ -58,10 +58,13 @@ def set_graph_weight(gw):
         except KeyError, e:
             pass
 
-def best_path_from_to(gw, origin, destination):
+def shortest_path_from_to(gw, origin, destination, **kwargs):
+    return gw.shortest_path_from_to(origin, destination)
+
+def best_path_from_to(gw, origin, destination, **kwargs):
     
     # try to retrive the best path between origin and dest is in buffer
-    global best_paths_buffer, shortest_paths_buffer
+    global best_paths_buffer, shortest_t_paths_buffer, shortest_l_paths_buffer
     try:
         best_path = best_paths_buffer[(origin, destination)]
         return best_path
@@ -74,17 +77,35 @@ def best_path_from_to(gw, origin, destination):
     # compute shortest path between origin and dest
     # Paths whose length not much longer than shortest length will be considered below
     try:
-        shortest_path = shortest_paths_buffer[(origin, destination)]
+        shortest_t_path = shortest_t_paths_buffer[(origin, destination)]
     except KeyError, e:
-        shortest_path = gw.shortest_path_from_to(origin, destination)
-        shortest_paths_buffer[(origin, destination)] = shortest_path
-    shortest = sum([gw.G[e[0]][e[1]]['length'] for e in shortest_path])
+        shortest_t_path = gw.shortest_path_from_to(origin, destination, 'time')
+        shortest_t_paths_buffer[(origin, destination)] = shortest_t_path
+    try:
+        shortest_l_path = shortest_l_paths_buffer[(origin, destination)]
+    except KeyError, e:
+        shortest_l_path = gw.shortest_path_from_to(origin, destination, 'length')
+        shortest_l_paths_buffer[(origin, destination)] = shortest_l_path
     
-    if abs(shortest - euclid) < euclid * 0.01 and len(shortest_path) < 3:
-        return shortest_path
+    ## shortest = sum([gw.G[e[0]][e[1]]['length'] for e in shortest_path])
+    
+    if len(shortest_t_path) == 0:
+        return ()
+    if len(shortest_l_path) == 0:
+        return ()
+    tmp_path = cp.new_path_from_es(gw, 0, shortest_t_path)
+    shortest_time = tmp_path.precise_time(kwargs['orig_lonlat'], kwargs['dest_lonlat'])
+    
+    tmp_path = cp.new_path_from_es(gw, 0, shortest_l_path)
+    shortest_length = tmp_path.precise_length(kwargs['orig_lonlat'], kwargs['dest_lonlat'])
+
+
+    if (abs(shortest_length - euclid) < euclid * 0.01 and len(shortest_path) < 3) or shortest_length > 20:
+        return shortest_t_path
         pass
 
-    max_l = shortest * 1.2
+    max_l = shortest_length * 1.2
+    max_t = shortest_time * 1.2
 
     # visited = {node_id:(
     # 0) pre node_id, 
@@ -114,9 +135,9 @@ def best_path_from_to(gw, origin, destination):
                 
                 # attributes of e
                 e_wid = gw.G[e[0]][e[1]]['way_id']
-                e_l = gw.G[e[0]][e[1]]['length']
+                e_l = gw.G[e[0]][e[1]]['length'] 
                 e_u = float(int(ways_used_times[e_wid-1]))
-                e_t = e_l / (e_u + 1)
+                e_t = gw.G[e[0]][e[1]]['time']
                 e_lu = e_l * e_u
 
                 # check if cv will cause a loop
@@ -155,7 +176,7 @@ def best_path_from_to(gw, origin, destination):
                 cv_s_t = s_t + e_t
                 cv_s_lu = s_lu + e_lu
                 cv_n_e = n_e + 1
-                if cv_s_l > max_l:
+                if cv_s_l > max_l or cv_s_t > max_t:
                     # unreachable
                     if cv in debug_cvs:
                         print "l > max"
@@ -211,17 +232,15 @@ def best_path_from_to(gw, origin, destination):
     path = []
     # destination has not been visited, this is impossible
     if not visited.has_key(destination):
-        return shortest_path
+        return shortest_t_path
 
     # backward from destination to origin and return the path founded
     cv = destination
     pv = visited[cv][0]
-    i = 1
-    while pv >= 0 and i < 100:
+    while pv >= 0:
         path.append((pv,cv))
         cv = pv
         pv = visited[cv][0]
-        i += 1
     path.reverse()
     
     # store path founded in buffer
@@ -230,11 +249,16 @@ def best_path_from_to(gw, origin, destination):
     return path
 
 def match(gw, track):
-    global best_paths_buffer, shortest_paths_buffer
+    global best_paths_buffer, shortest_t_paths_buffer, shortest_l_paths_buffer
     best_paths_buffer = dict()
-    shortest_paths_buffer = dict()
+    shortest_t_paths_buffer = dict()
+    shortest_l_paths_buffer = dict()
 
-    p = track2path(gw, track)
+    try:
+        p = track2path(gw, track)
+    except Exception as e:
+        traceback.print_exc()
+        p = None
     if p is None:
         print 'failed'
         return None
@@ -250,7 +274,7 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
     projss = []
 
     # for every gps-record in track, find its valid projection candidates
-    for rd in rds:
+    for rd in list(rds):
         lonlat_rds = rd['gps_lonlat']
         projs = gw.find_projs_within(lonlat_rds, r)
         # if no projection candidates found, remove the gps-record from track
@@ -263,7 +287,10 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
             projss.append(projs)
         else:
             projss.append(projs)
-   
+
+    if len(projss) == 0:
+        raise Exception('projss is []')
+
     # minimum length of path from source to vertex(i,ii) in DAG
     min_sw_dict = {}
     # previous vertex in path with minimum length(above) in DAG
@@ -319,31 +346,35 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
                 # 2) weight of path between ii and jj
                 if t_ii == s_jj:
                     p_tii_sjj = ()
-                    w_tii_sjj = ii_proj['l_t'] + jj_proj['l_s']
+                    ## w_tii_sjj = ii_proj['l_t'] + jj_proj['l_s']
+                    w_tii_sjj = ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
                 
                 elif t_ii == t_jj and s_ii == s_jj:
                     p_tii_sjj = ()
-                    w_tii_sjj = jj_proj['l_s'] - ii_proj['l_s']
+                    ## w_tii_sjj = jj_proj['l_s'] - ii_proj['l_s']
+                    w_tii_sjj = jj_proj['l_s']/speed_jj - ii_proj['l_s']/speed_ii
                     
                     if w_tii_sjj < 0:
-                        ## p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj)
+                        ## p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj, 'time')
                         ## p_tii_sjj = best_path_from_to_slow(gw, t_ii, s_jj)
-                        p_tii_sjj = best_path_from_to(gw, t_ii, s_jj)
+                        p_tii_sjj = best_path_from_to(gw, t_ii, s_jj, orig_lonlat=ii_proj['proj_lonlat'], dest_lonlat=jj_proj['proj_lonlat'])
 
                         if not len(p_tii_sjj) > 0:
                             w_tii_sjj = INF
                         else:
-                            w_tii_sjj = gw.length_of_edges(p_tii_sjj) + ii_proj['l_t'] + jj_proj['l_s']
+                            ## w_tii_sjj = gw.length_of_edges(p_tii_sjj) + ii_proj['l_t'] + jj_proj['l_s']
+                            w_tii_sjj = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
                 
                 else:
-                    ## p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj)
+                    ## p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj, 'time')
                     ## p_tii_sjj = best_path_from_to_slow(gw, t_ii, s_jj)
-                    p_tii_sjj = best_path_from_to(gw, t_ii, s_jj)
+                    p_tii_sjj = best_path_from_to(gw, t_ii, s_jj, orig_lonlat=ii_proj['proj_lonlat'], dest_lonlat=jj_proj['proj_lonlat'])
 
                     if not len(p_tii_sjj) > 0:
                         w_tii_sjj = INF
                     else:
-                        w_tii_sjj = gw.length_of_edges(p_tii_sjj) + ii_proj['l_t'] + jj_proj['l_s']
+                        ## w_tii_sjj = gw.length_of_edges(p_tii_sjj) + ii_proj['l_t'] + jj_proj['l_s']
+                        w_tii_sjj = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
                 
                 # add edge between ii and jj to DAG
                 # w_tii_sjj = math.exp(-w_tii_sjj)
@@ -372,7 +403,7 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
             min_jj = jj
 
     if min_jj < 0:
-        return None
+        raise Exception("min_jj < 0")
 
     # backward from best sink vertex, generate the path in DAG
     pdag = []
@@ -381,7 +412,7 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
         pdag.append(v)
         pv = pre_dict[v]
         if pv is None:
-            return None
+            raise Exception("backward failed")
         if pv == -1:
             break
         else:
@@ -411,7 +442,7 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
             es.append(e)
 
     if len(es) == 0:
-        return None
+        raise Exception("es is []")
     
     # generating path instance from es
     path = cp.new_path_from_es(gw, track.tid, es)

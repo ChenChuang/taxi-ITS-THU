@@ -16,42 +16,28 @@ ges = list()
 
 
 def prepare(gw):
-    set_graph_weight(gw)
-
-def set_graph_weight(gw):
-    for wid in xrange(1, gw.ways_num()+1):
-        s,t = gw.st[wid]
-        gw.G[s][t]['weight'] = gw.G[s][t]['length'] / gw.G[s][t]['speed']
-        try:
-            gw.G[t][s]['weight'] = gw.G[s][t]['length'] / gw.G[s][t]['speed']
-        except KeyError, e:
-            pass
-
+    pass
 
 def match(gw, track, debug = False):
-    dag = create_dag(gw, track)
-    if dag is None:
-        print 'failed creating DAG',
+    try:
+        dag = create_dag(gw, track)
+        if dag is None:
+            print 'failed creating DAG',
+            return None
+        p_dag = cdagm.longest_path_dag(dag, init_weight_with, combine_weight_with)
+        if p_dag is None:
+            print 'failed finding path in DAG',
+            return None
+        es = cdagm.pdag2es(dag, p_dag)
+        if es is None:
+            print 'failed generating edge list in Graph'
+            return None
+        p = cp.new_path_from_es(gw, track.tid, es)
+        if p is None:
+            print 'failed creating Path instance'
+            return None
+    except:
         return None
-    p_dag = cdagm.longest_path_dag(dag, init_weight_with, combine_weight_with)
-    if p_dag is None:
-        print 'failed finding path in DAG',
-        return None
-    es = cdagm.pdag2es(dag, p_dag)
-    if es is None:
-        print 'failed generating edge list in Graph'
-        return None
-    p = cp.new_path_from_es(gw, track.tid, es)
-    if p is None:
-        print 'failed creating Path instance'
-        return None
-    if debug:
-        global gdag
-        gdag = dag.copy()
-        global gpag
-        gpdag = list(p_dag)
-        global ges
-        ges = list(es)
     return p
 
 def create_dag(gw, track, k=5, r=0.1, sigma=0.02):
@@ -138,7 +124,7 @@ def create_dag(gw, track, k=5, r=0.1, sigma=0.02):
                     if abs(ls_tii_sjj[0]) < 0.00000001:
                         ls_tii_sjj = [d_i_j,]
                     elif ls_tii_sjj[0] < 0:
-                        p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj)
+                        p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj, 'time')
 
                         if not len(p_tii_sjj) > 0:
                             w_tii_sjj = -INF
@@ -146,7 +132,7 @@ def create_dag(gw, track, k=5, r=0.1, sigma=0.02):
                             ls_tii_sjj = [ii_proj['l_t'],] + list(gw.get_edges_attr(p_tii_sjj, 'length')) + [jj_proj['l_s'],]
                             vs_tii_sjj = [speed_ii, ] + list(gw.get_edges_attr(p_tii_sjj, 'speed')) + [speed_jj, ]
                 else:
-                    p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj)
+                    p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj, 'time')
 
                     if not len(p_tii_sjj) > 0:
                         w_tii_sjj = -INF

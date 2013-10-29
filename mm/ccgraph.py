@@ -108,7 +108,8 @@ class GraphWrapper:
                     s, 
                     t, 
                     way_id = way_id, 
-                    weight = length / speed, 
+                    weight = 1,
+                    time = length / speed,
                     length = length, 
                     speed = speed, 
                     s_lonlat = s_lonlat, 
@@ -120,7 +121,8 @@ class GraphWrapper:
                         t, 
                         s, 
                         way_id = way_id,
-                        weight = length / speed, 
+                        weight = 1,
+                        time = length / speed, 
                         length = length, 
                         speed = speed, 
                         s_lonlat = t_lonlat, 
@@ -271,12 +273,9 @@ class GraphWrapper:
             print e
             return False
 
-    def shortest_path_from_to(self, origin, destination, method='astar', **kwargs):
-        if method == 'astar':
-            pass
-
+    def shortest_path_from_to(self, origin, destination, weight, **kwargs):
         try:
-            vs = nx.shortest_path(self.G, origin, destination)
+            vs = nx.shortest_path(self.G, origin, destination, weight=weight)
         except Exception, e:
             #print e
             return ()
@@ -351,10 +350,10 @@ class GraphWrapper:
         b_lonlat = self.nodes_pos[nb]
         return lonlats2km(a_lonlat, b_lonlat)
 
-    def weight_of_edges(self, es):
+    def time_of_edges(self, es):
         w = 0
         for e in es:
-            w = w + self.G[e[0]][e[1]]['weight']
+            w = w + self.G[e[0]][e[1]]['time']
         return w
 
     def length_of_edges(self, es):
@@ -420,7 +419,10 @@ def d_p2seg(p_lonlat, s_lonlat, t_lonlat):
     if pt**2 >= ps**2 + st**2:
         return ps
     l = (ps + pt + st) / 2
-    a = math.sqrt(l * (l-ps) * (l-pt) * (l-st))
+    try:
+        a = math.sqrt(l * (l-ps) * (l-pt) * (l-st))
+    except:
+        return 0
     return 2 * a / st
 
 def proj_p2seg(p_lonlat, s_lonlat, t_lonlat):

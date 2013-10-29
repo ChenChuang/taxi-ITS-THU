@@ -17,15 +17,15 @@ import networkx as nx
 #import matplotlib.pyplot as plt
 
 TRACKS_FROM_ROW = 1
-TRACKS_TO_ROW = 10000
+TRACKS_TO_ROW = 1000
 
 TRACKS_FROM_TID = 1
-TRACKS_TO_TID = 10000
+TRACKS_TO_TID = 1000
 
 #METHOD = 'bn'
 #METHOD = 'st'
 #METHOD = 'iv'
-METHOD = 'ut'
+#METHOD = 'ut'
 METHOD = 'uti'
 
 algs = {'bn':abn, 'st':ast, 'iv':aiv, 'ut':aut, 'uti':auti}
@@ -38,8 +38,8 @@ pawd = cdb.new_path_attr_writer_for_method(method = METHOD)
 pt2j = cj.new_pt2geojson(method = METHOD)
 
 def match(track):
-    print "t2json..",
-    pt2j.write_t_geojson(track)
+    # print "t2json..",
+    # pt2j.write_t_geojson(track)
     
     print "Matching..",
     path = alg.match(gw, track)
@@ -123,4 +123,5 @@ def clear():
 
 if __name__ == "__main__":
     mm()
+    alg.summary.printme()
 

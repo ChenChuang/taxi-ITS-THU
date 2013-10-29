@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>ITS Taxi MM Compare</title>
+
+	<link rel="stylesheet" href="../bootstrap/css/bootstrap.css">
+	<link rel="stylesheet" href="../style/compare.style.css" type="text/css">
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+    <script src="../OpenLayers/OpenLayers.js"></script>
+    <script src="../raty-2.5.2/lib/jquery.raty.js"></script>
+    <script src="../js/compare.mm.js"></script>
+	<script src="../js/jquery.json-2.4.js"></script>
+
+
+    <script type="text/javascript">
+		$(document).ready(function(){ 
+			$('#next_btn').click(function(){
+				next();
+			    });
+			$('#ok_btn').click(function(){
+				upload_ranks();
+			    });
+			$('#tids_btn').click(function(){
+				var fromtid = $('#fromtid_tx').val();
+				var totid = $('#totid_tx').val();
+				get_tids_compare(fromtid, totid);
+                });
+            $('#bn_btn').click(function(){
+                set_alg("bn"); 
+                set_display_rank();
+                get_data();
+                });
+            $('#st_btn').click(function(){
+                set_alg("st");
+                set_display_rank();
+                get_data();
+                });
+            $('#iv_btn').click(function(){
+                set_alg("iv");
+                set_display_rank();
+                get_data();
+                });
+            $('#ut_btn').click(function(){
+                set_alg("ut");
+                set_display_rank();
+                get_data();
+                });
+            $('#uti_btn').click(function(){
+                set_alg("uti");
+                set_display_rank();
+                get_data();
+                });
+            $('#star').raty({
+                click: function(score, e) {
+                    set_alg_rank(score);
+                    }
+                });
+		})
+		function set_alg_info(str) {
+			$('#alg_face').html(str);		
+		}
+		function set_tid_info(str) {
+			$('#tid_face').html(str);		
+        }
+        function set_display_rank() {
+            $('#star').raty('score', get_alg_rank());
+        }
+        function set_alg_button(alg, rank) {
+            $('#' + alg + '_btn').html(alg.toUpperCase() + '-' + rank)
+        }
+    </script>
+
+  	</head>
+  	<body onload="init()">
+    <div id="maindiv">
+		<div class="topdiv">
+			<div id="titlediv">
+		    	<h1 id="title">ITS Taxi MM Compare</h1>
+            </div>
+            <div id="algdiv">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-default" id="bn_btn">BN</button>
+                    <button type="button" class="btn btn-default" id="st_btn">ST</button>
+                    <button type="button" class="btn btn-default" id="iv_btn">IV</button>
+                    <button type="button" class="btn btn-default" id="ut_btn">UT</button>
+                    <button type="button" class="btn btn-default" id="uti_btn">UTI</button>
+                </div>
+            </div>
+			<div id="rankdiv">
+                <div id="stardiv"i>
+                    <div id="star"></div>
+                </div>
+                <a href="#" class="btn" id="ok_btn">OK</a>
+                <a href="#" class="btn" id="next_btn">Next</a>
+				<label class="face" id="alg_face">:|</label>
+            </div>
+			<div id="getdiv">
+				<input type="text" class="input-block-level" placeholder="tid" id="totid_tx" value="1000">
+				<label class="sep-">-</label>
+				<input type="text" class="input-block-level" placeholder="tid" id="fromtid_tx" value="1">
+		    	<a href="#" class="btn" id="tids_btn">Get Tids</a>
+				<label class="face" id="tid_face">:|</label>
+			</div>
+		</div>
+		<div id="map" class="mainmap"></div>
+	</div>
+  	</body>
+</html>
+

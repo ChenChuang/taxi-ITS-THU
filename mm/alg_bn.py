@@ -10,16 +10,7 @@ ges = list()
 
 
 def prepare(gw):
-    set_graph_weight(gw)
-
-def set_graph_weight(gw):
-    for wid in xrange(1, gw.ways_num()+1):
-        s,t = gw.st[wid]
-        gw.G[s][t]['weight'] = gw.G[s][t]['length'] / gw.G[s][t]['speed']
-        try:
-            gw.G[t][s]['weight'] = gw.G[s][t]['length'] / gw.G[s][t]['speed']
-        except KeyError, e:
-            pass
+    pass
 
 def match(gw, track, debug = False):
     dag = create_dag(gw, track)
@@ -111,20 +102,20 @@ def create_dag(gw, track, r=0.1):
                     w_tii_sjj = (jj_proj['l_s'] - ii_proj['l_s'])/speed_ii
                     
                     if w_tii_sjj < 0:
-                        p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj)
+                        p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj, 'time')
                         
                         if not len(p_tii_sjj) > 0:
                             w_tii_sjj = INF
                         else:
-                            w_tii_sjj = gw.weight_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
+                            w_tii_sjj = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
                 
                 else:
-                    p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj)
+                    p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj, 'time')
                     
                     if not len(p_tii_sjj) > 0:
                         w_tii_sjj = INF
                     else:
-                        w_tii_sjj = gw.weight_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
+                        w_tii_sjj = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
                 
                 # add edge between ii and jj to DAG
                 dag.add_edge((i, ii), (j, jj), path = p_tii_sjj, weight = w_tii_sjj)

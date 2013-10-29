@@ -16,39 +16,30 @@ ges = list()
 
 
 def prepare(gw):
-    set_graph_weight(gw)
-
-def set_graph_weight(gw):
-    for wid in xrange(1, gw.ways_num()+1):
-        s,t = gw.st[wid]
-        gw.G[s][t]['weight'] = gw.G[s][t]['length'] / gw.G[s][t]['speed']
-        try:
-            gw.G[t][s]['weight'] = gw.G[s][t]['length'] / gw.G[s][t]['speed']
-        except KeyError, e:
-            pass
-
+    pass
 
 def match(gw, track, debug = False):
-    dag = create_dag(gw, track)
-    if dag is None:
-        print 'failed creating DAG',
+    dag_rds = create_dag_rds(gw, track)
+    if dag_rds is None:
+        # print 'failed creating DAG',
         return None
+    dag = dag_rds['dag']
+    rds = dag_rds['rds']
+    vote_dict = voting(dag, rds)
     
-    vote_dict = voting(dag, track.rds)
-    
-    p_dag = path_from_vote(dag, vote_dict, track.rds)
+    p_dag = path_from_vote(dag, vote_dict, rds)
 
 
     if p_dag is None:
-        print 'failed finding path in DAG',
+        # print 'failed finding path in DAG',
         return None
     es = cdagm.pdag2es(dag, p_dag)
     if es is None:
-        print 'failed generating edge list in Graph'
+        # print 'failed generating edge list in Graph'
         return None
     p = cp.new_path_from_es(gw, track.tid, es)
     if p is None:
-        print 'failed creating Path instance'
+        # print 'failed creating Path instance'
         return None
     if debug:
         global gdag
@@ -96,7 +87,7 @@ def clip_dag(dag, v):
 def voting(dag, rds):
     vote_dict = create_vote_dict(dag)
     for wi in range(0, len(rds)):
-        print wi,
+        # print wi,
         idag = influence_dag(dag, wi, rds)
         cii = 0
         while True:
@@ -108,7 +99,7 @@ def voting(dag, rds):
             for v in p_cdag:
                 vote_dict[v] = vote_dict[v] + 1
             cii = cii + 1
-    print ""
+    # print ""
     return vote_dict
 
 def path_from_vote(dag, vote_dict, rds):
@@ -133,10 +124,14 @@ def path_from_vote(dag, vote_dict, rds):
                 max_vote = vote_v
                 d_proj_max_vote_ii = d_proj_v
             ii = ii + 1
+        if max_vote_ii < 0:
+            return None
         p_dag.append((i,max_vote_ii))
+    if len(p_dag) == 0:
+        return None
     return p_dag
 
-def create_dag(gw, track, k=5, r=0.1, sigma=0.02):
+def create_dag_rds(gw, track, k=5, r=0.1, sigma=0.02):
     dag = nx.DiGraph()
     rds = []
     projss = []
@@ -220,7 +215,7 @@ def create_dag(gw, track, k=5, r=0.1, sigma=0.02):
                     if abs(ls_tii_sjj[0]) < 0.00000001:
                         ls_tii_sjj = [d_i_j,]
                     elif ls_tii_sjj[0] < 0:
-                        p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj)
+                        p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj, 'time')
 
                         if not len(p_tii_sjj) > 0:
                             w_tii_sjj = -INF
@@ -228,7 +223,7 @@ def create_dag(gw, track, k=5, r=0.1, sigma=0.02):
                             ls_tii_sjj = [ii_proj['l_t'],] + list(gw.get_edges_attr(p_tii_sjj, 'length')) + [jj_proj['l_s'],]
                             vs_tii_sjj = [speed_ii, ] + list(gw.get_edges_attr(p_tii_sjj, 'speed')) + [speed_jj, ]
                 else:
-                    p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj)
+                    p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj, 'time')
 
                     if not len(p_tii_sjj) > 0:
                         w_tii_sjj = -INF
@@ -261,7 +256,7 @@ def create_dag(gw, track, k=5, r=0.1, sigma=0.02):
                 F_tii_sjj = Fs_tii_sjj * Ft_tii_sjj
                 dag.add_edge((i, ii), (j, jj), path = p_tii_sjj, weight = Fs_tii_sjj)
 
-    return dag
+    return {'dag':dag, 'rds':rds}
 
 def combine_weight_with(sw_cv, w_cv_nv, w_nv):
     return sw_cv + w_cv_nv
