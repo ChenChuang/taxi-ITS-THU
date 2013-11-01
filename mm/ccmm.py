@@ -24,9 +24,9 @@ TRACKS_TO_TID = 1000
 
 #METHOD = 'bn'
 #METHOD = 'st'
-#METHOD = 'iv'
+METHOD = 'iv'
 #METHOD = 'ut'
-METHOD = 'uti'
+#METHOD = 'uti'
 
 algs = {'bn':abn, 'st':ast, 'iv':aiv, 'ut':aut, 'uti':auti}
 alg = algs[METHOD]

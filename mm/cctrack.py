@@ -30,7 +30,7 @@ def new_track_from_db(str_tid, str_cuid, geom, desc):
                 rds.append( {'time':tt, 'head':hh, 'speed':ss, 'gps_lonlat':lonlats[i]} )
             i = i + 1
         rds = tuple(rds)
-        return Track(tid, cuid, rds)
+        return Track(tid, cuid, rds, desc)
 
     except Exception,e:
         print e
@@ -40,10 +40,11 @@ def new_track_from_db(str_tid, str_cuid, geom, desc):
 
 
 class Track:
-    def __init__(self, tid, cuid, rds):
+    def __init__(self, tid, cuid, rds, desc=None):
         self.tid = tid
         self.cuid = cuid
         self.rds = rds
+        self.desc = desc
     
     def length(self):
         l = 0
@@ -111,8 +112,16 @@ class Track:
     def get_geom(self):
         lonlats = [rd['gps_lonlat'] for rd in self.rds]
         return cg.lonlats2geom(lonlats)
+    
+    def get_desc(self):
+        return self.desc
 
-
+    def sample(self, interval):
+        rds = list(self.rds[::interval])
+        if len(self.rds) - 1 % interval != 0:
+            rds.append(self.rds[-1])
+        self.rds = rds
+        self.desc = ",".join(self.desc.split(',')[::interval])
 
 
 

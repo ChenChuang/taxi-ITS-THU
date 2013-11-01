@@ -16,8 +16,11 @@ def tbname_of_purpose(purpose):
     else:
         return None
 
-def new_path_reader(gw=None, limit=10000, offset=0):
-    return PathReader(tbname="taxi_paths", gw=gw, limit=limit, offset=offset)
+def tbname_by_sample(interval):
+    return 'taxi_tracks_sample_' + str(interval)
+
+def new_path_reader(gw=None, tbname="taxi_paths", limit=10000, offset=0):
+    return PathReader(tbname=tbname, gw=gw, limit=limit, offset=offset)
 
 def new_path_writer(tbname="taxi_paths"):
     return PathWriter(tbname=tbname)
@@ -60,6 +63,16 @@ def new_track_writer(tbname):
 
 def new_track_attr_writer(tbname="taxi_tracks_attr"):
     return TrackAttrWriter(tbname=tbname)
+
+
+def new_track_reader_by_sample(interval):
+    tbname = tbname_by_sample(interval)
+    return TrackReader(tbname=tbname, limit=10000, offset=0)
+
+def new_track_writer_by_sample(interval):
+    tbname = tbname_by_sample(interval)
+    return TrackWriter(tbname=tbname)
+
 
 def new_way_attr_db(tbname="ways_ut_attr"):
     return WayAttrDB(tbname=tbname)
@@ -301,13 +314,14 @@ class PathReader(DB):
                     password = self.password)
             tmp_cursor = tconn.cursor(cursor_factory = pgextras.DictCursor)
             sql = "select tid, way_ids, st_astext(path_geom) as geom from " + self.tbname + " where tid = %s"
-            tmp_cursor.execute(sql, (str(tid),))
+            tmp_cursor.execute(sql, (tid,))
             row = tmp_cursor.fetchone()
             if row == None:
                 return None
             else:
                 return cp.new_path_from_db(self.gw, row['tid'], row['way_ids'], row['geom'])
-        except:
+        except Exception, e:
+            print e
             return None
 
 
@@ -365,13 +379,23 @@ class TrackWriter(DB):
         super(TrackWriter, self).__init__()
         self.tbname = tbname
 
-    def insert(self, track):
+    def insert_geom(self, track):
         sql = "insert into " + self.tbname + "(tid, track_geom) values (%s, %s)"
         try:
             self.cursor.execute(sql, (track.tid, track.get_geom()))
             self.conn.commit()
         except:
             pass
+    
+    def insert(self, track):
+        sql = "insert into " + self.tbname + "(tid, cuid, track_geom, track_desc) values (%s, %s, %s, %s)"
+        try:
+            self.cursor.execute(sql, (track.tid, track.cuid, track.get_geom(), track.get_desc()))
+            self.conn.commit()
+        except:
+            pass
+    
+
 
 
 class TrackAttrWriter(DB):

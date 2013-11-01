@@ -15,7 +15,7 @@ import alg_uti as auti
 
 algs = {'bn':abn, 'st':ast, 'iv':aiv, 'ut':aut, 'uti':auti}
 
-def mm(tid, method):
+def mm(tid, method, interval=1):
     alg = algs[method]
 
     gw = cg.new_gw()
@@ -24,6 +24,7 @@ def mm(tid, method):
     pt2j = cj.new_pt2geojson(method = method)
 
     track = trd.fetch_by_id(tid)
+    track.sample(interval)
     track.summary()
     pt2j.write_t_geojson(track)
 

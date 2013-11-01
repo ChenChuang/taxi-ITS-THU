@@ -80,7 +80,22 @@ class Path:
             for e in self.es[1:-1]:
                 l += self.gw.G[e[0]][e[1]]['length']
         return l
-    
+
+    def precise_length_by_wid(self, orig_lonlat, dest_lonlat):
+        if len(self.es) == 0 and self.gw != None:
+            self.get_es_from_ways()
+
+        if len(self.es) == 0:
+            l = []
+        if len(self.es) == 1:            
+            l = [self.gw.proj_p2edge(orig_lonlat, self.es[0])['l_t'] - self.gw.proj_p2edge(dest_lonlat, self.es[0])['l_t'],]
+        else:
+            l = [self.gw.proj_p2edge(orig_lonlat, self.es[0])['l_t'],] 
+            for e in self.es[1:-1]:
+                l.append(self.gw.G[e[0]][e[1]]['length'])
+            l.append(self.gw.proj_p2edge(dest_lonlat, self.es[-1])['l_s'])
+        return l
+
     def precise_time(self, orig_lonlat, dest_lonlat):
         if len(self.es) == 0 and self.gw != None:
             self.get_es_from_ways()
@@ -225,5 +240,28 @@ class Path:
                 proj_lonlats.append(proj_lonlat)
         return proj_lonlats
 
+    def compare(self, gt_path):
+        st = self.gw.st
+        gw = self.gw
+        gt_es = set()
+        es = set()
+        for wid in gt_path.get_ways():
+            e = st[wid]
+            i = 1
+            while (e[0], e[1], i) in gt_es:
+                i += 1
+            gt_es.add((e[0], e[1], i))
+        for wid in self.get_ways():
+            e = st[wid]
+            i = 1
+            while (e[0], e[1], i) in es:
+                i += 1
+            es.add((e[0], e[1], i))
+
+        result = {}
+        result['matched_length'] = sum([gw.G[s][t]['length'] for s,t,i in (gt_es & es)])
+        result['missed_length']  = sum([gw.G[s][t]['length'] for s,t,i in (gt_es - es)])
+        result['false_length']   = sum([gw.G[s][t]['length'] for s,t,i in (es - gt_es)])
+        return result
 
 

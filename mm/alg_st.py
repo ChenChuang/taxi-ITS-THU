@@ -140,6 +140,9 @@ def create_dag(gw, track, k=5, r=0.1, sigma=0.02):
                         ls_tii_sjj = [ii_proj['l_t'],] + list(gw.get_edges_attr(p_tii_sjj, 'length')) + [jj_proj['l_s'],]
                         vs_tii_sjj = [speed_ii, ] + list(gw.get_edges_attr(p_tii_sjj, 'speed')) + [speed_jj, ]
 
+                if (4722, 22105) in p_tii_sjj:
+                    print p_tii_sjj
+
 
                 if w_tii_sjj != 0:
                     dag.add_edge((i, ii), (j, jj), path = p_tii_sjj, weight = w_tii_sjj)
@@ -163,7 +166,7 @@ def create_dag(gw, track, k=5, r=0.1, sigma=0.02):
                 Ft_tii_sjj = sum(vs_tii_sjj) / math.sqrt(sum([v**2 for v in vs_tii_sjj])) / math.sqrt(len(vs_tii_sjj))
                 #Ft_tii_sjj = math.sqrt(sum([(v-avg_v)**2, for v in vs_tii_sjj]))
                 F_tii_sjj = Fs_tii_sjj * Ft_tii_sjj
-                dag.add_edge((i, ii), (j, jj), path = p_tii_sjj, weight = Fs_tii_sjj)
+                dag.add_edge((i, ii), (j, jj), path = p_tii_sjj, weight = F_tii_sjj)
 
     return dag
 

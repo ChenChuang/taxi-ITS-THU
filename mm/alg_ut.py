@@ -100,7 +100,7 @@ def best_path_from_to(gw, origin, destination, **kwargs):
     shortest_length = tmp_path.precise_length(kwargs['orig_lonlat'], kwargs['dest_lonlat'])
 
 
-    if (abs(shortest_length - euclid) < euclid * 0.01 and len(shortest_path) < 3) or shortest_length > 20:
+    if (abs(shortest_length - euclid) < euclid * 0.01 and len(shortest_t_path) < 3) or shortest_length > 20:
         return shortest_t_path
         pass
 
@@ -270,7 +270,8 @@ def match(gw, track):
 
 def track2path(gw, track, k=5, r=0.1, sigma=0.02):
     dag = nx.DiGraph()
-    rds = track.aggre_records()
+    ## rds = track.aggre_records()
+    rds = track.rds
     projss = []
 
     # for every gps-record in track, find its valid projection candidates
@@ -311,8 +312,8 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
                     l_s = proj['l_s'], \
                     l_t = proj['l_t'], \
                     d_proj = proj['d_proj'], \
-                    # weight = norm(0,sigma).pdf(proj['d_proj']))
-                    weight = 0)
+                    weight = -math.log(norm(0,sigma).pdf(proj['d_proj'])))
+                    ## weight = 0)
             # the source vertexes
             if i == 0:
                 min_sw_dict[(i,ii)] = 0
@@ -419,7 +420,16 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
             v = pv
 
     pdag = pdag[::-1]
-    
+
+
+    def combine_weight_with(sw_cv, w_cv_nv, w_nv):
+        return sw_cv + w_cv_nv + w_nv
+
+    def init_weight_with(w_source_v):
+        return w_source_v
+
+    pdag = cdagm.shortest_path_dag(dag, init_weight_with, combine_weight_with)   
+
     # generating es from pdag
     vds = dag.nodes(data = True)
     vds_dict = {}
