@@ -344,7 +344,36 @@ class GraphWrapper:
         else:
             print ""
         return paths
-    
+
+    def is_turn_between_es(self, ea, eb):
+        if ea[1] != eb[0]:
+            raise Exception('error in is_turn_between_es')
+        cv = ea[1]
+        in_es = self.G.in_edges(nbunch = cv)
+        out_es = self.G.out_edges(nbunch = cv)
+        n_in = len(in_es)
+        n_out = len(out_es)
+        angle_ea_eb = self.angle_between_es(ea, eb)
+        angles_in_eb  = [self.angle_between_es(in_e,  eb) for in_e  in in_es ]
+        angles_ea_out = [self.angle_between_es(ea, out_e) for out_e in out_es]
+
+        if n_in == 1 and n_out == 1:
+            return False
+        if angle_ea_eb == min(angles_in_eb) and angle_ea_eb == min(angles_ea_out):
+            return False
+        return True
+
+    def angle_between_es(self, ea, eb):
+        a_lonlats = self.G[ea[0]][ea[1]]['lonlats']
+        a1 = a_lonlats[-2]
+        a2 = a_lonlats[-1]
+        
+        b_lonlats = self.G[eb[0]][eb[1]]['lonlats']
+        b1 = b_lonlats[0]
+        b2 = b_lonlats[1]
+
+        return angle_between_lonlats(a1,a2,b1,b2)
+
     def d_between_nodes(self, na, nb):
         a_lonlat = self.nodes_pos[na]
         b_lonlat = self.nodes_pos[nb]
@@ -399,6 +428,20 @@ def km2longap(d, lat):
 
 def lonlat2xykm(lonlat):
     return (111.0 * abs(math.cos(math.radians(lonlat[1]))) * lonlat[0], 111.0 * lonlat[1])
+
+def angle_between_lonlats(a1,a2,b1,b2):
+    a1_xy = lonlat2xykm(a1)
+    a2_xy = lonlat2xykm(a2)
+    b1_xy = lonlat2xykm(b1)
+    b2_xy = lonlat2xykm(b2)
+    
+    a = [a2_xy[0] - a1_xy[0], a2_xy[1] - a1_xy[1]]
+    b = [b2_xy[0] - b1_xy[0], b2_xy[1] - b1_xy[1]]
+
+    v = (a[0]*b[0] + a[1]*b[1]) / math.sqrt(a[0]**2 + a[1]**2) / math.sqrt(b[0]**2 + b[1]**2)
+    v = min(v, 1)
+    v = max(v, -1)
+    return math.acos(v)
 
 def d_p2p(s_xy, t_xy):
     return math.sqrt((s_xy[0] - t_xy[0])**2 + (s_xy[1] - t_xy[1])**2)

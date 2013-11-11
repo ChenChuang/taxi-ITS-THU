@@ -114,8 +114,9 @@ def best_path_from_to(gw, origin, destination, **kwargs):
     # 3) sum of time, 
     # 4) sum of used_times*length of way
     # 5) num of ways
+    # 6) num of turns
     # )}
-    visited = {origin:(-1,0,0,0,0,0)}
+    visited = {origin:(-1,0,0,0,0,0,0)}
     added = [origin,]
     
     # visit all nodes like dijkstra, and find the best path
@@ -126,7 +127,7 @@ def best_path_from_to(gw, origin, destination, **kwargs):
         added_nodes = added[::]
         added = []
         for v in added_nodes:
-            (pre, s_l, s_u, s_t, s_lu, n_e) = visited[v]
+            (pre, s_l, s_u, s_t, s_lu, n_e, n_tr) = visited[v]
             
             for e in gw.G.out_edges(nbunch = v):
                 # assert v == e[0]
@@ -139,6 +140,13 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                 e_u = float(int(ways_used_times[e_wid-1]))
                 e_t = gw.G[e[0]][e[1]]['time']
                 e_lu = e_l * e_u
+                if pre == -1:
+                    e_tr = 0
+                else:
+                    if gw.is_turn_between_es((pre,v),(v,cv)):
+                        e_tr = 1
+                    else:
+                        e_tr = 0
 
                 # check if cv will cause a loop
                 isloop = False
@@ -154,7 +162,8 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                     tmp_pv = visited[tmp_cv][0]
                 if isloop:
                     continue
-               
+              
+                # print some debug infos
                 debug_cvs = []
                 tmp_p = []
                 if False and cv in debug_cvs:
@@ -166,7 +175,6 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                         tmp_pv = visited[tmp_cv][0]
                     tmp_p.reverse()
                     print tmp_p
-                    print cv_s_l, cv_s_u, cv_s_t, cv_s_lu, cv_n_e
                     print ""
 
                 # check if destination is reachable from cv within max_l
@@ -176,6 +184,9 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                 cv_s_t = s_t + e_t
                 cv_s_lu = s_lu + e_lu
                 cv_n_e = n_e + 1
+                cv_n_tr = n_tr + e_tr
+
+                # check if it is possible to reach destination from cv within constrained travel time and length
                 if cv_s_l > max_l or cv_s_t > max_t:
                     # unreachable
                     if cv in debug_cvs:
@@ -191,12 +202,7 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                 # if cv is visited, update it if necessary 
                 # else, add cv to added and visited_dict
 
-                # Greedy strategy is employed to select the best path so far
-                # WHAT IS THE BEST?
-                # Considering attributes of ways and evaluation of pathsi based on our trip module, 
-                # other than length, which has been considered via max_l
-
-                
+                is_to_add = False
 
                 if visited.has_key(cv):
                     cv_s_l_before = visited[cv][1]
@@ -204,31 +210,39 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                     cv_s_t_before = visited[cv][3]
                     cv_s_lu_before = visited[cv][4]
                     cv_n_e_before = visited[cv][5]
+                    cv_n_tr_before = visited[cv][6]
+
                     # if cv_n_e_before > 0 and float(cv_s_u) / cv_n_e > float(cv_s_u_before) / cv_n_e_before:
                     # if cv_s_t < cv_s_t_before:
                     # if cv_s_l < cv_s_l_before:
-                    if cv_s_lu / (cv_s_l+0.0000001) > cv_s_lu_before / (cv_s_l_before+0.0000001): 
-                        if cv not in added:
-                            added.append(cv)
-                        visited[cv] = (cv_pre, cv_s_l, cv_s_u, cv_s_t, cv_s_lu, cv_n_e)
-
-                        if False and cv in debug_cvs:
-                            print "update",cv
-                            print tmp_p
-                            print visited[cv]
-                            print ""
+                    if cv_n_tr == 0 and cv_n_tr_before > 0:
+                        is_to_add = True
+                    elif cv_s_lu / (cv_s_l+0.0000001) > cv_s_lu_before / (cv_s_l_before+0.0000001): 
+                        is_to_add = True
+    
                 else:
+                    is_to_add = True 
+                    
+                    # if any node is reached newly, continue to visit more nodes. otherwise, stop searching
+                    iscontinue = True
+
+                if is_to_add:
                     if cv not in added:
                         added.append(cv)
-                    visited[cv] = (cv_pre, cv_s_l, cv_s_u, cv_s_t, cv_s_lu, cv_n_e)
+                    visited[cv] = (cv_pre, cv_s_l, cv_s_u, cv_s_t, cv_s_lu, cv_n_e, cv_n_tr)
+
                     if False and cv in debug_cvs:
-                        print "add",cv
+                        print "add/update",cv
                         print tmp_p
                         print visited[cv]
                         print ""
-                    iscontinue = True
-                    continue
+    
+                # Greedy strategy is employed to select the best path so far
+                # WHAT IS THE BEST?
+                # Considering attributes of ways and evaluation of pathsi based on our trip module, 
+                # other than length, which has been considered via max_l
 
+ 
     path = []
     # destination has not been visited, this is impossible
     if not visited.has_key(destination):
