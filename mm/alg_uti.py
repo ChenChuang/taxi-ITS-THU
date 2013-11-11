@@ -144,6 +144,9 @@ def best_path_from_to(gw, origin, destination, **kwargs):
     max_l = shortest_length * 1.2
     max_t = shortest_time * 1.2
 
+    from_edge = kwargs['from_edge']
+    to_edge = kwargs['to_edge']
+
     # visited = {node_id:(
     # 0) pre node_id, 
     # 1) length of prior path, 
@@ -178,12 +181,17 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                 e_t = gw.G[e[0]][e[1]]['time']
                 e_lu = e_l * e_u
                 if pre == -1:
-                    e_tr = 0
+                    if gw.is_turn_between_es((from_edge[0],v), (v,cv)):
+                        e_tr = 1
+                    else:                                                                                       e_tr = 0
                 else:
                     if gw.is_turn_between_es((pre,v),(v,cv)):
                         e_tr = 1
                     else:
                         e_tr = 0
+                if cv == destination:
+                    if gw.is_turn_between_es((v,cv), (cv,to_edge[1])):
+                        e_tr += 1
 
                 # check if cv will cause a loop
                 isloop = False
@@ -416,7 +424,13 @@ def track2path(gw, track, path_selector, k=5, r=0.1, sigma=0.02, **kwargs):
                     if w_tii_sjj < 0:
                         ## p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj)
                         ## p_tii_sjj = best_path_from_to_slow(gw, t_ii, s_jj)
-                        p_tii_sjj = path_selector(gw, t_ii, s_jj, current = sw_ii, orig_lonlat=ii_proj['proj_lonlat'], dest_lonlat=jj_proj['proj_lonlat'], **kwargs)
+                        p_tii_sjj = path_selector(gw, t_ii, s_jj, 
+                                current = sw_ii, 
+                                orig_lonlat = ii_proj['proj_lonlat'], 
+                                dest_lonlat = jj_proj['proj_lonlat'], 
+                                from_edge = (s_ii, t_ii), 
+                                to_edge = (s_jj, t_jj), 
+                                **kwargs)
 
                         if not len(p_tii_sjj) > 0:
                             w_tii_sjj = INF
@@ -426,7 +440,13 @@ def track2path(gw, track, path_selector, k=5, r=0.1, sigma=0.02, **kwargs):
                 else:
                     ## p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj)
                     ## p_tii_sjj = best_path_from_to_slow(gw, t_ii, s_jj)
-                    p_tii_sjj = path_selector(gw, t_ii, s_jj, current = sw_ii, orig_lonlat=ii_proj['proj_lonlat'], dest_lonlat=jj_proj['proj_lonlat'], **kwargs)
+                    p_tii_sjj = path_selector(gw, t_ii, s_jj, 
+                            current = sw_ii, 
+                            orig_lonlat = ii_proj['proj_lonlat'], 
+                            dest_lonlat = jj_proj['proj_lonlat'], 
+                            from_edge = (s_ii, t_ii), 
+                            to_edge = (s_jj, t_jj), 
+                            **kwargs)
 
                     if not len(p_tii_sjj) > 0:
                         w_tii_sjj = INF
