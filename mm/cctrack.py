@@ -56,6 +56,17 @@ class Track:
             pre_lonlat = cur_lonlat
         return l
 
+    def max_d(self):
+        max_d = 0
+        pre_lonlat = self.rds[0]['gps_lonlat']
+        for i in range(1,len(self.rds)):
+            cur_lonlat = self.rds[i]['gps_lonlat']
+            d = cg.lonlats2km(pre_lonlat, cur_lonlat)
+            if d > max_d:
+                max_d = d
+            pre_lonlat = cur_lonlat
+        return max_d
+
     def summary(self):
         print "tid:",self.tid,"cuid:",self.cuid,"records number:",len(self.rds)
 

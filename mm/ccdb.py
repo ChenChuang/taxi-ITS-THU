@@ -409,19 +409,20 @@ class TrackAttrWriter(DB):
         row = self.cursor.fetchone()
         try:
             if int(row['num']) > 0:
-                sql = "update " + self.tbname + " set (length, rds_num) = (%s,%s) where tid = %s"
-                self.cursor.execute(sql, (str(track.length()), str(len(track.rds)), str(track.tid)))
+                sql = "update " + self.tbname + " set (length, rds_num, max_d) = (%s,%s,%s) where tid = %s"
+                self.cursor.execute(sql, (track.length(), len(track.rds), track.max_d(), track.tid))
             else:
-                sql = "insert into " + self.tbname + "(tid, length, rds_num) values (%s,%s,%s)"
-                self.cursor.execute(sql, (str(track.tid), str(track.length()), str(len(track.rds))))
+                sql = "insert into " + self.tbname + "(tid, length, rds_num, max_d) values (%s,%s,%s,%s)"
+                self.cursor.execute(sql, (track.tid, track.length(), len(track.rds), track.max_d()))
             self.conn.commit()
-        except:
+        except Exception,e:
+            print e
             pass
 
     def insert(self, track):
-        sql = "insert into " + self.tbname + "(tid, length, rds_num) values (%s,%s,%s)"
+        sql = "insert into " + self.tbname + "(tid, length, rds_num, max_d) values (%s,%s,%s,%s)"
         try:
-            self.cursor.execute(sql, (str(track.tid), str(track.length()), str(len(track.rds))))
+            self.cursor.execute(sql, (track.tid, track.length(), len(track.rds), track.max_d()))
             self.conn.commit()
         except:
             pass

@@ -1,7 +1,7 @@
 import ccdb as cdb
 
-from_cuid = 1;
-to_cuid = 1000;
+from_tid = 1;
+to_tid = 1000;
 
 def insert_tracks_attr():
     trd = cdb.new_track_reader()
@@ -9,14 +9,14 @@ def insert_tracks_attr():
         return
 
     tawd = cdb.new_track_attr_writer()
-    track = trd.fetch_one()
-    while track is not None:
-        if track.cuid >= from_cuid and track.cuid <= to_cuid:
-            print trd.fetched_num, track.tid
-            tawd.insert(track)
-        track = trd.fetch_one()
+    
+    for tid in xrange(from_tid, to_tid+1):
+        track = trd.fetch_by_id(tid)
+        print track.tid
+        tawd.insert_update(track)
     
     del trd
     del tawd
 
-insert_tracks_attr()
+if __name__ == "__main__":
+    insert_tracks_attr()

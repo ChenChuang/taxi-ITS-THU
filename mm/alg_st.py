@@ -140,8 +140,8 @@ def create_dag(gw, track, k=5, r=0.1, sigma=0.02):
                         ls_tii_sjj = [ii_proj['l_t'],] + list(gw.get_edges_attr(p_tii_sjj, 'length')) + [jj_proj['l_s'],]
                         vs_tii_sjj = [speed_ii, ] + list(gw.get_edges_attr(p_tii_sjj, 'speed')) + [speed_jj, ]
 
-                if (4722, 22105) in p_tii_sjj:
-                    print p_tii_sjj
+                # if (4722, 22105) in p_tii_sjj:
+                    # print p_tii_sjj
 
 
                 if w_tii_sjj != 0:

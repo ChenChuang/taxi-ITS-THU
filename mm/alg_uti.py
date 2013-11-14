@@ -183,7 +183,8 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                 if pre == -1:
                     if gw.is_turn_between_es((from_edge[0],v), (v,cv)):
                         e_tr = 1
-                    else:                                                                                       e_tr = 0
+                    else:
+                        e_tr = 0
                 else:
                     if gw.is_turn_between_es((pre,v),(v,cv)):
                         e_tr = 1
@@ -337,8 +338,8 @@ def match(gw, track):
 
 def track2path(gw, track, path_selector, k=5, r=0.1, sigma=0.02, **kwargs):
     dag = nx.DiGraph()
-    ## rds = track.aggre_records()
-    rds = track.rds
+    rds = track.aggre_records()
+    ## rds = track.rds
     projss = []
 
     # for every gps-record in track, find its valid projection candidates

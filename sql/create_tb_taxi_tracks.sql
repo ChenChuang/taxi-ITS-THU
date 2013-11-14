@@ -12,6 +12,7 @@ create table taxi_tracks_attr(
 	tid int not null references taxi_tracks(id) on delete cascade,
 	length double precision not null default 0,
 	rds_num int not null default 0,
+    max_d double precision not null default 0,
 	primary key(tid));
 
 	
