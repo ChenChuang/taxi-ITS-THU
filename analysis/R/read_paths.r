@@ -20,10 +20,12 @@ new.path <- function(r) {
 read.paths <- function() {
     drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname="beijing_taxi", user="postgres")
-    #sql <- "select tid, way_ids as ways, length from taxi_paths_dp limit 2"
-	#sql <- "select taxi_paths.tid as tid, way_ids as ways from taxi_paths,taxi_paths_attr where taxi_paths.tid=taxi_paths_attr.tid and taxi_paths_attr.valid=1"    
-	max_tid = 100000
-    sql <- paste("select taxi_paths_bn.tid as tid, way_ids as ways, length, conf from taxi_paths_bn,taxi_paths_bn_attr where taxi_paths_bn.tid=taxi_paths_bn_attr.tid and taxi_paths_bn.tid <=",max_tid)
+	
+    max_tid      = 100000
+    path_tb      = "taxi_paths_bn"
+    path_attr_tb = "taxi_paths_bn_attr"
+    
+    sql <- paste("select ptb.tid as tid, way_ids as ways, length, conf from",path_tb,"as ptb,",path_attr_tb,"as patb where ptb.tid = patb.tid and ptb.tid <=",max_tid)
     rs <- dbSendQuery(conn, sql)
 
     all.paths <- list()

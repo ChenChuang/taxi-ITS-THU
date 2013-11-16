@@ -179,6 +179,7 @@ plot.false <- function(df) {
 
 if(F) {
     source("compare_mm.r")
+
     df <- read.ranks()
     hist.ranks(df,'bn')
     hist.ranks.together(df)

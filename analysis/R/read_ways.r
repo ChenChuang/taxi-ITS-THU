@@ -16,7 +16,7 @@ read.ways.attrs <- function(columns) {
     drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname="beijing_mm_po_car", user="postgres")
 
-    df <- dbReadTable(conn, "ways_and_attrs")
+    df <- dbReadTable(conn, "ways_and_attrs_2")
 
     dbDisconnect(conn)
     dbUnloadDriver(drv)

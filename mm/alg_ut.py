@@ -294,8 +294,8 @@ def match(gw, track):
 
 def track2path(gw, track, k=5, r=0.1, sigma=0.02):
     dag = nx.DiGraph()
-    ## rds = track.aggre_records()
-    rds = track.rds
+    rds = track.aggre_records()
+    ## rds = track.rds
     projss = []
 
     # for every gps-record in track, find its valid projection candidates
@@ -336,7 +336,8 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
                     l_s = proj['l_s'], \
                     l_t = proj['l_t'], \
                     d_proj = proj['d_proj'], \
-                    weight = -math.log(norm(0,sigma).pdf(proj['d_proj'])))
+                    weight = proj['d_proj'])
+                    ## weight = -math.log(norm(0,sigma).pdf(proj['d_proj'])))
                     ## weight = 0)
             # the source vertexes
             if i == 0:
@@ -372,12 +373,12 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
                 if t_ii == s_jj:
                     p_tii_sjj = ()
                     ## w_tii_sjj = ii_proj['l_t'] + jj_proj['l_s']
-                    w_tii_sjj = ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
+                    w_tii_sjj = ii_proj['l_t'] + jj_proj['l_s']
                 
                 elif t_ii == t_jj and s_ii == s_jj:
                     p_tii_sjj = ()
                     ## w_tii_sjj = jj_proj['l_s'] - ii_proj['l_s']
-                    w_tii_sjj = jj_proj['l_s']/speed_jj - ii_proj['l_s']/speed_ii
+                    w_tii_sjj = jj_proj['l_s'] - ii_proj['l_s']
                     
                     if w_tii_sjj < 0:
                         ## p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj, 'time')
@@ -391,8 +392,8 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
                         if not len(p_tii_sjj) > 0:
                             w_tii_sjj = INF
                         else:
-                            ## w_tii_sjj = gw.length_of_edges(p_tii_sjj) + ii_proj['l_t'] + jj_proj['l_s']
-                            w_tii_sjj = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
+                            w_tii_sjj = gw.length_of_edges(p_tii_sjj) + ii_proj['l_t'] + jj_proj['l_s']
+                            ## w_tii_sjj = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
                 
                 else:
                     ## p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj, 'time')
@@ -406,8 +407,8 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
                     if not len(p_tii_sjj) > 0:
                         w_tii_sjj = INF
                     else:
-                        ## w_tii_sjj = gw.length_of_edges(p_tii_sjj) + ii_proj['l_t'] + jj_proj['l_s']
-                        w_tii_sjj = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
+                        w_tii_sjj = gw.length_of_edges(p_tii_sjj) + ii_proj['l_t'] + jj_proj['l_s']
+                        ## w_tii_sjj = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
                 
                 # add edge between ii and jj to DAG
                 # w_tii_sjj = math.exp(-w_tii_sjj)

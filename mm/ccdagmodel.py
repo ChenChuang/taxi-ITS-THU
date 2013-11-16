@@ -53,7 +53,26 @@ def shortest_path_dag(dag, init_weight_with = None, combine_weight_with = None):
                 else:
                     tmp_sw_nv = combine_weight_with(sw_cv, w_cv_nv, w_nv)
 
-                if tmp_sw_nv < sw_nv:
+                isloop = False
+
+                if False:
+                    tmp_pdag = [nv]
+                    tmp_v = cv
+                    while True:
+                        tmp_pdag.append(tmp_v)
+                        tmp_pv = vds_dict[tmp_v]['pre']
+                        if tmp_pv is None:
+                            break
+                        else:
+                            tmp_v = tmp_pv
+                    tmp_es = pdag2es(dag,tmp_pdag[::-1])
+                    if len(set(tmp_es)) < len(tmp_es):
+                        isloop = True
+                        print tmp_pdag[::-1],len(set(tmp_es)),len(tmp_es)
+
+                isloop = False
+                
+                if tmp_sw_nv < sw_nv and not isloop:
                     g.add_node(nv, pre = cv, sweight = tmp_sw_nv)
                     vds_dict[nv]['sweight'] = tmp_sw_nv
                     vds_dict[nv]['pre'] = cv
@@ -190,8 +209,15 @@ def pdag2es(dag, p_dag):
         if e == pe:
             continue
         else:
-            es = es + list(dag[pv][v]['path'])
-            es.append(e)
+            tmp_path = list(dag[pv][v]['path'])
+            while len(tmp_path) > 0:
+                if es[-1] != tmp_path[0]:
+                    break
+                else:
+                    tmp_path = tmp_path[1:]
+            es = es + tmp_path
+            if es[-1] != e:
+                es.append(e)
 
     return tuple(es)
     

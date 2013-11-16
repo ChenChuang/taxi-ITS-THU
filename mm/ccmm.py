@@ -19,14 +19,14 @@ import networkx as nx
 TRACKS_FROM_ROW = 1
 TRACKS_TO_ROW = 1000
 
-TRACKS_FROM_TID = 450
+TRACKS_FROM_TID = 1
 TRACKS_TO_TID = 1000
 
 #METHOD = 'bn'
 #METHOD = 'st'
-#METHOD = 'iv'
+METHOD = 'iv'
 #METHOD = 'ut'
-METHOD = 'uti'
+#METHOD = 'uti'
 
 algs = {'bn':abn, 'st':ast, 'iv':aiv, 'ut':aut, 'uti':auti}
 alg = algs[METHOD]

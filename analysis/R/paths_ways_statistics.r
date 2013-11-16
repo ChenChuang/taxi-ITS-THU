@@ -15,56 +15,24 @@ if(F) {
 if(F) {
     source('read_ways.r')
     print('reading ways and attrs')
-    df.ways.attrs <- read.ways.attrs(c('id','used_times','km','kmh'))
+    df.ways.attrs <- read.ways.attrs(c('id','used_times','used_interval','km','kmh'))
 }
 
 # retrive speed sequences of all paths
 if(F) {
-    speeds <- lapply(paths, path2speeds)
-}
-
-# deprecated. initialize used_times of ways as 0
-if(F) {
-    ways.used.times <- list()
-    for(w in ways$id) {
-        ways.used.times[w] <- 0
-    }
-}
-
-# calculate used_times of ways in path
-countways <- function(p) {
-    ws <- p$ways
-    for(w in ws) {
-        #stat.ways[ways$id == w, "count"] <<- stat.ways[ways$id == w, "count"] + 1
-        ways.used.times[w] <<- ways.used.times[[w]] + 1
-    }
-}
-
-# calculate used_times of ALL ways from ALL paths
-if(F) {
-    lapply(paths, countways)
+    paths.speeds <- lapply(paths, path2speeds)
 }
 
 # plot hist of used_times of ALL ways
 if(F) {
-    a <- unlist(ways.used.times)
+    a <- df.ways.attrs[['used_times']]
+    x11()
     hist(a)
+    x11()
     hist(a[a>0])
 }
 
-# generate data.frame of used_times of ways
-if(F) {
-    used_times <- unlist(ways.used.times)
-    # all lengths should be equal to 52886
-    if(length(ways.used.times) != length(used_times)) {
-        print('error')
-    }else {
-        wid <- 1:length(used_times)
-        df.ways <- data.frame(wid=wid, used_times=used_times)
-    }
-}
-
-# statistical attribute sequence of ways in path
+# statistical attribute sequence of ways in pathi, slow and deprecated
 path2wayattrs <- function(p, attr) {
     ws <- p$ways
     ss <- rep(-1,length(ws))
@@ -76,20 +44,41 @@ path2wayattrs <- function(p, attr) {
 
 if(F) {
     ways.num <- length(df.ways.attrs$id)
-    
+
+    print('generating ways.used_times')    
     ways.used_times <- rep(0, ways.num)
     for(i in 1:ways.num) {
         ways.used_times[i] <- df.ways.attrs[df.ways.attrs$id == i, 'used_times']
     }
+
+    print('generating ways.used_interval.text')    
+    ways.used_interval.text <- rep(0, ways.num)
+    for(i in 1:ways.num) {
+        ways.used_interval.text[i] <- df.ways.attrs[df.ways.attrs$id == i, 'used_interval']
+    }
+
+    print('generating ways.used_interval')    
+    ways.used_interval <- list(rep(0, ways.num))
+    for(i in 1:ways.num) {
+        ways.used_interval[[i]] <- unlist(lapply(strsplit(df.ways.attrs[df.ways.attrs$id == i, 'used_interval'], ','), as.numeric))
+    }
+
+    print('generating ways.km')    
     ways.km <- rep(0, ways.num)
     for(i in 1:ways.num) {
         ways.km[i] <- df.ways.attrs[df.ways.attrs$id == i, 'km']
     }
 
+    print('generating ways.kmh')    
     ways.kmh <- rep(0, ways.num)
     for(i in 1:ways.num) {
         ways.kmh[i] <- df.ways.attrs[df.ways.attrs$id == i, 'kmh']
     }
+}
+
+plot.way.used_interval <- function(i, ylim) {
+    x11()
+    plot(1:10, ways.used_interval[[i]], ylim = ylim, type = 's')
 }
 
 path2way.km <- function(p) {
@@ -118,10 +107,12 @@ if(F) {
     paths.lengths <- lapply(paths, path2way.km)
 }
 
+# retrive speed sequences of all paths
 if(F) {
     paths.speeds <- lapply(paths, path2way.kmh)
 }
 
+# little functions for generating used_times model of all paths
 path2cumlengths <- function(pl) {
     return(c(0, cumsum(pl)))
 }
@@ -131,24 +122,32 @@ path2normlengths <- function(pl) {
     return(pl/sl)
 }
 
-path2usedtimes_forplot <- function(pu) {
+path2usedtimes.forplot <- function(pu) {
     return(c(pu, pu[length(pu)]))
 }
 
+# generate used_times model of all paths
 if(F) {
+    print('generating used_times models of all paths')    
     paths.norm.lengths <- lapply(paths.lengths, path2normlengths)
     paths.cum.lengths <- lapply(paths.lengths, path2cumlengths)
     paths.cum.norm.lengths <- lapply(paths.norm.lengths, path2cumlengths)
-    paths.used_timeses.forplot <- lapply(paths.used_timeses, path2usedtimes_forplot)
+    paths.used_timeses.forplot <- lapply(paths.used_timeses, path2usedtimes.forplot)
 }
 
-plot.path.ut <- function(i) {
+# plot the used_times model of path with tid = i
+plot.path.used_times <- function(i) {
     # print(paths[[i]]$tid)
     tmp_cls <- paths.cum.lengths[[i]]
     tmp_cnls <- paths.cum.norm.lengths[[i]]
     tmp_uts <- paths.used_timeses.forplot[[i]]
     plot(tmp_cnls, tmp_uts, type='s') 
 }
+
+# sample the used_times model of path
+sp <- 0.001
+sn <- 1000
+from <- 0
 
 sample.stairs <- function(x,y,sp,sn,from) {
     max_x <- max(x)
@@ -183,11 +182,9 @@ sample.stairs <- function(x,y,sp,sn,from) {
     return(s)
 }
 
-sp <- 0.001
-sn <- 1000
-from <- 0
-
+# calculate the average used_times model of all paths
 avg.path.ut <- function() {
+    print('calculating average used_times model from all paths')    
     paths.num = length(paths)
     avg.uts <- rep(0, sn)
     for(i in 1:paths.num) {
@@ -195,7 +192,8 @@ avg.path.ut <- function() {
     }
     return(avg.uts / paths.num)
 }
-
+i
+# plot the average used_times model
 plot.avg.uts <- function(avg.uts) {
     x11()
     plot(seq(sp,sp*sn,sp), avg.uts, type='l')
@@ -208,7 +206,9 @@ if(F) {
 
 
 
-
+if(F) {
+    plot.way.used_interval(5, c(0,200))
+}
 
 
 

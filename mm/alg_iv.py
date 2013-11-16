@@ -93,7 +93,7 @@ def voting(dag, rds):
         while True:
             if not dag.has_node((wi, cii)):
                 break
-            #print (wi, cii),
+            # print (wi, cii),
             cdag = clip_dag(idag, (wi, cii))
             p_cdag = cdagm.longest_path_dag(cdag, init_weight_with, combine_weight_with)
             for v in p_cdag:
@@ -237,10 +237,10 @@ def create_dag_rds(gw, track, k=5, r=0.1, sigma=0.02):
                     continue
                 # add edge between ii and jj to DAG
                 N_jj = norm(0,sigma).pdf(jj_proj['d_proj'])
-                #ts = []
-                #for a in range(0,len(ls_ii_jj)):
+                # ts = []
+                # for a in range(0,len(ls_ii_jj)):
                 #    ts.append(ls_ii_jj[a] / vs_ii_jj[a])
-                #V_ii_jj = sum(ts)
+                # V_ii_jj = sum(ts)
                 t_tii_sjj = 0
                 for ilv in range(0,len(ls_tii_sjj)):
                     t_tii_sjj = t_tii_sjj + ls_tii_sjj[ilv] / vs_tii_sjj[ilv]
@@ -252,7 +252,7 @@ def create_dag_rds(gw, track, k=5, r=0.1, sigma=0.02):
                 Fs_tii_sjj = V_tii_sjj * N_jj
                 avg_v = l_tii_sjj / time_i_j
                 Ft_tii_sjj = sum(vs_tii_sjj) / math.sqrt(sum([v**2 for v in vs_tii_sjj])) / math.sqrt(len(vs_tii_sjj))
-                #Ft_tii_sjj = math.sqrt(sum([(v-avg_v)**2, for v in vs_tii_sjj]))
+                # Ft_tii_sjj = math.sqrt(sum([(v-avg_v)**2, for v in vs_tii_sjj]))
                 F_tii_sjj = Fs_tii_sjj * Ft_tii_sjj
                 dag.add_edge((i, ii), (j, jj), path = p_tii_sjj, weight = F_tii_sjj)
 

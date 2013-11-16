@@ -380,7 +380,8 @@ def track2path(gw, track, path_selector, k=5, r=0.1, sigma=0.02, **kwargs):
                     l_s = proj['l_s'], \
                     l_t = proj['l_t'], \
                     d_proj = proj['d_proj'], \
-                    weight = -math.log(norm(0,sigma).pdf(proj['d_proj'])))
+                    weight = proj['d_proj'])
+                    ## weight = -math.log(norm(0,sigma).pdf(proj['d_proj'])))
                     ## weight = 0)
             # the source vertexes
             if i == 0:
@@ -464,11 +465,15 @@ def track2path(gw, track, path_selector, k=5, r=0.1, sigma=0.02, **kwargs):
             for tmp_ii in range(0,len(i_projs)):
                 min_sw_i_ii = min_sw_dict[(i, tmp_ii)] 
                 tmp_sw_j_jj = min_sw_i_ii + dag[(i,tmp_ii)][(j,jj)]['weight']
+
                 if tmp_sw_j_jj < min_sw_j_jj:
                     min_sw_j_jj = tmp_sw_j_jj
                     min_ii = tmp_ii
             min_sw_dict[(j,jj)] = min_sw_j_jj
             pre_dict[(j,jj)] = (i, min_ii)
+
+    
+
 
     # find the sink vertex with minimum sum of weights
     min_sw_j_jj = INF
@@ -498,16 +503,13 @@ def track2path(gw, track, path_selector, k=5, r=0.1, sigma=0.02, **kwargs):
 
     pdag = pdag[::-1]
 
-
-
     def combine_weight_with(sw_cv, w_cv_nv, w_nv):
         return sw_cv + w_cv_nv + w_nv
 
     def init_weight_with(w_source_v):
         return w_source_v
 
-    pdag = cdagm.shortest_path_dag(dag, init_weight_with, combine_weight_with)   
-
+    pdag = cdagm.shortest_path_dag(dag, init_weight_with, combine_weight_with)
 
 
 
@@ -530,7 +532,8 @@ def track2path(gw, track, path_selector, k=5, r=0.1, sigma=0.02, **kwargs):
             continue
         else:
             es = es + list(dag[pv][v]['path'])
-            es.append(e)
+            if es[-1] != e:
+                es.append(e)
 
     if len(es) == 0:
         return None
