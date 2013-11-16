@@ -32,7 +32,7 @@ def new_gw():
     return gw
 
 
-class GraphWrapper:
+class GraphWrapper(object):
     def __init__(self):
         self.G = None
         self.__ways_num = None

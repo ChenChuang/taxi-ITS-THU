@@ -31,7 +31,7 @@ def new_pt2geojson(method):
         return None
     return PT2Geojson(method)
 
-class PT2Geojson:
+class PT2Geojson(object):
     
     def __init__(self, method):
         self.output_dir_p = "/home/chenchuang/beijing_taxi_proc_output/geojson_paths/"

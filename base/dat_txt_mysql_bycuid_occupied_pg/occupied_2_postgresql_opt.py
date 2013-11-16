@@ -10,7 +10,7 @@ import common.config as config
 from_cuid = 241
 to_cuid = 4000
 
-class Tracks2Postgres:
+class Tracks2Postgres(object):
     
     def __init__(self):
         self.conn = psycopg2.connect(database='beijing_taxi',user='postgres',password='123456')

@@ -29,7 +29,7 @@ def new_path_from_db(gw, str_tid, str_way_ids, geom):
 
     return Path(gw = gw, tid = tid, es = None, ways = ways, lonlats = lonlats)
 
-class Path:
+class Path(object):
     def __init__(self, gw, tid, es, ways, lonlats):
         self.gw = gw
         self.tid = tid

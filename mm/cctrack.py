@@ -39,7 +39,7 @@ def new_track_from_db(str_tid, str_cuid, geom, desc):
     return None
 
 
-class Track:
+class Track(object):
     def __init__(self, tid, cuid, rds, desc=None):
         self.tid = tid
         self.cuid = cuid
