@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout 
+		xmlns:android="http://schemas.android.com/apk/res/android"
+		android:id="@+id/container"
+		android:orientation="vertical"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent">
+    
+	 
+		<com.mapquest.android.maps.MapView
+				android:id="@+id/map"
+				android:layout_width="fill_parent"
+				android:layout_height="fill_parent"
+				android:clickable="true"
+				android:enabled="true"
+				android:apiKey="Fmjtd%7Cluub2gub29%2Crn%3Do5-9uaada"
+		/>
+		
+		<LinearLayout 
+				android:id="@+id/container1"
+				android:orientation="horizontal"
+				android:layout_width="fill_parent"
+				android:layout_height="fill_parent">
+	    
+				<Button 
+						android:background="@drawable/style_button"
+						android:id="@+id/followMeButton"
+						android:padding="3dip"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:layout_marginTop="5dip"
+						android:layout_marginRight="4dip"
+						android:layout_weight="1" 
+						android:text="Follow Me"/>
+				
+				<Button 
+						android:background="@drawable/style_button"
+						android:id="@+id/reset"
+						android:padding="3dip"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:layout_marginTop="5dip"
+						android:layout_weight="1" 
+						android:text="reset"/>
+	    
+		</LinearLayout>
+	
+    
+</RelativeLayout>

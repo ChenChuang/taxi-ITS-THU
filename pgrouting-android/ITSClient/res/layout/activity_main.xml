@@ -1,0 +1,50 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity" >
+    <org.osmdroid.views.MapView
+	    android:id="@+id/mapview"
+	    android:layout_width="fill_parent"
+	    android:layout_height="fill_parent"/>
+	<LinearLayout
+	    android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:layout_alignParentTop="true"
+    	android:orientation="horizontal"
+    	android:background="#aaaaaaaa">
+	    <TextView
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="@string/setpoint"
+	        android:layout_marginLeft="10dp"
+	        android:layout_marginRight="5dp"
+	        android:textColor="#222222" />
+	    <RadioGroup 
+	        android:layout_width="wrap_content"
+			android:layout_height="wrap_content" 
+			android:orientation="horizontal"
+			android:id="@+id/rgp">
+			<RadioButton 
+			    android:id="@+id/rbt_sets"
+				android:layout_width="wrap_content" 
+				android:layout_height="wrap_content"
+				android:text="@string/start" 
+				android:checked="true"
+				android:textColor="#222222"/>
+			<RadioButton 
+			    android:id="@+id/rbt_sett" 
+			    android:layout_width="wrap_content"
+				android:layout_height="wrap_content" 
+				android:text="@string/target"
+				android:textColor="#222222" />
+		</RadioGroup>
+		<Button
+	        android:id="@+id/btn_get"
+	        android:layout_width="0dp"
+	        android:layout_height="wrap_content"
+	        android:text="@string/route"
+	        android:layout_marginLeft="20dp"
+	        android:layout_weight="1"/>
+	</LinearLayout>	
+</RelativeLayout>
