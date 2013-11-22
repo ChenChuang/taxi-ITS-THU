@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 # python
 
+=======
+>>>>>>> cb0fc2956b2243255831c71b7672adf3412790ab
 *.py[cod]
 
 # C extensions
@@ -36,6 +39,7 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+<<<<<<< HEAD
 
 # R
 
@@ -60,3 +64,5 @@ tools/
 .svn/
 base/.svn/
 
+=======
+>>>>>>> cb0fc2956b2243255831c71b7672adf3412790ab
