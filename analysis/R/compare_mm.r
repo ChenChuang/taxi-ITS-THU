@@ -3,19 +3,18 @@ library(RPostgreSQL)
 rank.avg.between <- function(a, b) {    
     drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname="beijing_taxi", user="postgres")
-    sql <- paste("select 
-                 avg(bn) as abn, 
-                 avg(st) as ast,
-                 avg(iv) as aiv,
-                 avg(ut) as aut,
-                 avg(uti) as auti 
-                 from taxi_paths_compare,taxi_tracks_attr 
-                 where taxi_paths_compare.tid = taxi_tracks_attr.tid 
-                 and bn*st*iv*ut*uti > 0 
-                 and max_d >", a, "and max_d <=", b, "and taxi_tracks_attr.tid <= 1000")
+    sql <- paste("select", 
+                 "avg(bn) as abn,", 
+                 "avg(st) as ast,",
+                 "avg(iv) as aiv,",
+                 "avg(uti) as auti",
+                 "from taxi_paths_compare as taxi_paths_compare, taxi_tracks_attr",
+                 "where taxi_paths_compare.tid = taxi_tracks_attr.tid",
+                 "and bn*st*iv*uti > 0",
+                 "and max_d >", a, "and max_d <=", b, "and taxi_tracks_attr.tid <= 1000")
     rs <- dbGetQuery(conn, sql)
     dbDisconnect(conn)
-    dbUnloadDriver(drv) 
+    dbUnloadDriver(drv)
     return(rs)
 }
 
@@ -23,14 +22,13 @@ rank.var.between <- function(a, b) {
     drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname="beijing_taxi", user="postgres")
     sql <- paste("select 
-                 sqrt(avg(bn*bn) - avg(bn)*avg(bn)) as vbn, 
-                 sqrt(avg(st*st) - avg(st)*avg(st)) as vst,
-                 sqrt(avg(iv*iv) - avg(iv)*avg(iv)) as viv,
-                 sqrt(avg(ut*ut) - avg(ut)*avg(ut)) as vut,
-                 sqrt(avg(uti*uti) - avg(uti)*avg(uti)) as vuti 
-                 from taxi_paths_compare,taxi_tracks_attr 
+                 stddev(bn) as vbn, 
+                 stddev(st) as vst,
+                 stddev(iv) as viv,
+                 stddev(uti) as vuti 
+                 from taxi_paths_compare as taxi_paths_compare, taxi_tracks_attr 
                  where taxi_paths_compare.tid = taxi_tracks_attr.tid 
-                 and bn*st*iv*ut*uti > 0 
+                 and bn*st*iv*uti > 0 
                  and max_d >", a, "and max_d <=", b, "and taxi_tracks_attr.tid <= 1000")
     rs <- dbGetQuery(conn, sql)
     dbDisconnect(conn)
@@ -43,27 +41,33 @@ read.ranks <- function() {
     conn <- dbConnect(drv, dbname="beijing_taxi", user="postgres")
 
     # df <- dbReadTable(conn, "taxi_paths_compare")
-    df <- dbReadTable(conn, "taxi_paths_compare_deprecated")
+    df <- dbReadTable(conn, "taxi_paths_compare")
     
     dbDisconnect(conn)
     dbUnloadDriver(drv)
+
+    df <- df[df$bn * df$st * df$iv * df$ut * df$uti > 0, c('bn','st','iv','uti')]
     return(df)
 }
 
 hist.ranks.together <- function(df) {
-    methods <- c('bn','st','iv','ut','uti')
+    methods <- c('bn','st','iv','uti')
+    legends <- c('Shortest path', 'ST-Matching', 'IVVM', 'FM-Matching')
     ma <- NULL
     for(method in methods) {
-        ranks <- hist(df[[method]], breaks=5, plot=F)
+        ranks <- hist(df[[method]], breaks=seq(from=0.5, to=5.5, by=1.0), plot=F)
         if(is.null(ma)) {
-            ma <- ranks$density
+            ma <- ranks$counts
         }else {
-            ma <- rbind(ma, ranks$density)
+            ma <- rbind(ma, ranks$counts)
         }
     }
-    cols <- c('green','blue','darkblue','red','darkred')
-    barplot(ma, beside=T, col=cols) 
-    legend('topleft', legend=methods, fill=cols, border=F, bty="n")
+    # cols <- c(51,125,132,'red')
+    cols <- c('chartreuse4','blue','darkorchid','red')
+    barplot(ma, beside=T, ylim=c(0,400), col=cols, xlab='Rank', ylab='Frequency', cex.lab=1.5, cex.axis=1.5) 
+    legend('topleft', legend=legends, fill=cols, border=F, bty="n", cex=1.5)
+    axis(1, at=seq(from=3,by=5,length.out=5), labels=c('1','2','3','4','5'), las=1, cex.axis=1.5)
+    box(bty = "o")
 }
 
 hist.ranks <- function(df, method) {
@@ -73,7 +77,7 @@ hist.ranks <- function(df, method) {
 read.compare.tracks <- function() {
     drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname="beijing_taxi", user="postgres")
-    sql <- "select tid,length,rds_num,max_d from taxi_tracks_attr where tid in (select tid from taxi_paths_compare)"
+    sql <- "select tid,length,rds_num,max_d from taxi_tracks_attr where tid in (select tid from taxi_paths_compare where bn*st*iv*ut*uti > 0)"
     rs <- dbGetQuery(conn, sql)
     dbDisconnect(conn)
     dbUnloadDriver(drv)
@@ -82,15 +86,28 @@ read.compare.tracks <- function() {
 }
 
 hist.interval <- function(df) {
-    hist(df$interval, breaks=25)
+    hist(df$interval, breaks=25, xlab='Average interval [km]', main='')
 }
 
 hist.max_d <- function(df) {
-    hist(df$max_d, breaks=25)
+    ah <- hist(df$max_d, breaks=50, plot=F)
+    i <- ah$breaks[2]-ah$breaks[1]
+    barplot(ah$counts, col=('white'), beside=F, space=0, cex.lab=1.5, cex.axis=1.5, xlim=c(0,12)/i, ylim=c(0,70), ylab='Number of trajectories', xlab='Max interval [km]')
+    axis(1, at=seq(from=0,to=12/i,by=2/i), labels=c('0','2','4','6','8','10','12'), las=1, cex.axis=1.5)
+    box(bty = "o")
+}
+
+hist.length <- function(df) {
+    hist(df$length, breaks=25, xlab='Length [km]', main='')
 }
 
 read.ranks.avg <- function() {
-    s <- c(0, 0.2, 0.4, 0.6, 2.0, 1000000)
+    dff <- read.compare.tracks()
+    s <- unname(quantile(dff$max_d,  probs = c(0,25,50,75,100)/100))
+
+    # s <- c(0, 0.5, 1.0, 2.0, 4.0, 1000000)
+    print(s)
+
     df <- data.frame()
     for(i in 1:(length(s)-1)) {
         rs <- rank.avg.between(s[i], s[i+1])
@@ -100,7 +117,12 @@ read.ranks.avg <- function() {
 }
 
 read.ranks.var <- function() {
-    s <- c(0, 0.2, 0.4, 0.6, 2.0, 1000000)
+    dff <- read.compare.tracks()
+    s <- unname(quantile(dff$max_d,  probs = c(0,25,50,75,100)/100))
+
+    # s <- c(0, 0.5, 1.0, 2.0, 4.0, 1000000)
+    print(s)
+
     df <- data.frame()
     for(i in 1:(length(s)-1)) {
         rs <- rank.var.between(s[i], s[i+1])
@@ -110,91 +132,118 @@ read.ranks.var <- function() {
 }
 
 plot.ranks.avg <- function(df) {
-    yrange <- c(3.0,4.5)
-    xrange <- c(0.7,5.3)
-    x11()
-    plot(xrange, yrange, type="n", xaxt="n", xlab="Sampling rate", ylab="Rank") 
-    linetype <- c(1:5) 
-    plotchar <- c(1, 2, 0, 17, 15)
-    text <- c('bn','st','iv','ut','uti')
-    for(i in 1:5) {
-        lines(1:5, df[[i]], type="b", lwd=1, lty=linetype[i], pch=plotchar[i])
+    yrange <- c(3.5,5.0)
+    xrange <- c(0.7,4.3)
+    n <- length(df$abn)
+    # x11()
+    plot(xrange, yrange, type="n", xaxt="n", xlab="Max interval [km]", ylab="Average of ranks", cex.lab=1.5, cex.axis=1.5) 
+    linetype <- c(6,2,1,4) 
+    plotchar <- c(0, 1, 2, 15)
+    cols <- c('chartreuse4','blue','darkorchid','red')
+    text <- c('Shortest path','ST-Matching','IVVM','FM-Matching')
+    for(i in 1:4) {
+        lines(1:n, df[[i]], type="b", col=cols[i], lwd=2, lty=linetype[i], pch=plotchar[i])
     }
-    axis(1, at=1:5, labels=c('Very High','High','Medium','Low','Very Low'), las=1)
-    legend(xrange[1], yrange[2], legend=text, pch=plotchar, lty=linetype, bty="n")
+    axis(1, at=c(0.7,1.5,2.5,3.5,4.3), labels=c('0.00','0.81','1.27','2.43','11.45'), las=1, cex.axis=1.5)
+    legend(xrange[1], yrange[2]+0.05, col=cols, legend=text, pch=plotchar, lty=linetype, lwd=2, bty="n", cex=1.5)
 }
 
 plot.ranks.var <- function(df) {
-    yrange <- c(0.7,2.0)
-    xrange <- c(0.7,5.3)
-    x11()
-    plot(xrange, yrange, type="n", xaxt="n", xlab="Sampling rate", ylab="Rank") 
-    linetype <- c(1:5) 
-    plotchar <- c(1, 2, 0, 17, 15)
-    text <- c('bn','st','iv','ut','uti')
-    for(i in 1:5) {
-        lines(1:5, df[[i]], type="b", lwd=1, lty=linetype[i], pch=plotchar[i])
+    yrange <- c(0.75,1.5)
+    xrange <- c(0.7,4.3)
+    n <- length(df$vbn)
+    # x11()
+    plot(xrange, yrange, type="n", xaxt="n", xlab="Max interval [km]", ylab="Standard deviation of ranks", cex.lab=1.5, cex.axis=1.5) 
+    linetype <- c(6,2,1,4) 
+    plotchar <- c(0, 1, 2, 15)
+    cols <- c('chartreuse4','blue','darkorchid','red')
+    text <- c('Shortest path','ST-Matching','IVVM','FM-Matching')
+    for(i in 1:4) {
+        lines(1:n, df[[i]], type="b", col=cols[i], lwd=2, lty=linetype[i], pch=plotchar[i])
     }
-    axis(1, at=1:5, labels=c('Very High','High','Medium','Low','Very Low'), las=1)
-    legend(xrange[2]-1, yrange[2], legend=text, pch=plotchar, lty=linetype, bty="n")
+    axis(1, at=c(0.7,1.5,2.5,3.5,4.3), labels=c('0.00','0.81','1.27','2.43','11.45'), las=1, cex.axis=1.5)
+    legend(xrange[2]-1.5, yrange[2]+0.02, col=cols, legend=text, pch=plotchar, lty=linetype, lwd=2, bty="n", cex=1.5)
 }
 
 read.precisions <- function() {
-    df <- read.table('sample_compare_result.txt',
+    # filename <- 'sample_gt_1.txt'
+    filename <- 'sample_compare_result.txt'
+    df <- read.table(filename,
                      header=F, dec='.', col.names=c('method','sample','matched','missed','false'))
     return(df)
 }
 
 plot.column <- function(df, col, yrange) {
     xrange <- c(1.8,8.2)
-    x11()
+    # x11()
     require(Hmisc)
-    plot(xrange, yrange, type="n", xlab="Sampling interval", ylab = capitalize(paste(col,"precision"))) 
-    linetype <- c(1:5) 
-    plotchar <- c(1, 2, 0, 17, 15)
-    text <- c('bn','st','iv','ut','uti')
-    for(i in 1:5) {
+    plot(xrange, yrange, xaxt="n", type="n", xlab="Sampling interval", ylab = capitalize(paste(col,"ratio")), cex.lab=1.5, cex.axis=1.5) 
+    linetype <- c(6,2,1,4) 
+    plotchar <- c(0, 1, 2, 15)
+    cols <- c('chartreuse4','blue','darkorchid','red')
+    text <- c('bn','st','iv','uti')
+    legends <- c('Shortest path','ST-Matching','IVVM','FM-Matching')
+    for(i in 1:4) {
         s = df[df$method == text[i], 'matched'] + df[df$method == text[i], 'missed']
-        lines(c(2,4,6,8), df[df$method == text[i], col]/s, type="b", lwd=1, lty=linetype[i], pch=plotchar[i])
+        lines(c(2,4,6,8), df[df$method == text[i], col]/s, type="b", lwd=2, col=cols[i], lty=linetype[i], pch=plotchar[i], xaxt='n', ann=F)
     }
     if(col == 'matched') {
-        legendx = xrange[2] - 1
+        legendx = xrange[2] - 2.7
     }else{
         legendx = xrange[1]
     }
-    legend(legendx, yrange[2], legend=text, pch=plotchar, lty=linetype, bty="n")
+    axis(1, at=c(2,4,6,8), labels=c('2','4','6','8'), las=1, cex.axis=1.5)
+    legend(legendx, yrange[2]+0.007, legend=legends, col=cols, pch=plotchar, lty=linetype, lwd=2, bty="n", cex=1.5)
 }
 
 plot.matched <- function(df) {
-    plot.column(df, 'matched', c(0.77,1.0))
+    plot.column(df, 'matched', c(0.75,1.0))
 }
 
 plot.missed <- function(df) {
-    plot.column(df, 'missed', c(0.02,0.22))
+    plot.column(df, 'missed', c(0.02,0.25))
 }
 
 plot.false <- function(df) {
-    plot.column(df, 'false', c(0.02,0.22))
+    plot.column(df, 'false', c(0.02,0.20))
 }
 
 if(F) {
-    source("compare_mm.r")
+    # source("compare_mm.r")
 
+    setEPS()
+
+    postscript("../../../paper/hist-ranks.eps", width=6, height=5)
     df <- read.ranks()
-    hist.ranks(df,'bn')
+    # hist.ranks(df,'bn')
     hist.ranks.together(df)
-    
+    dev.off()
+
+    postscript("../../../paper/ranks-avg.eps")
     df <- read.ranks.avg()
     plot.ranks.avg(df)
-    
+    dev.off()
+
+    postscript("../../../paper/ranks-stddev.eps")
     df <- read.ranks.var()
     plot.ranks.var(df)
+    dev.off()
 
+    postscript("../../../paper/matched.eps")
     df <- read.precisions()
     plot.matched(df)
-    plot.missed(df)
-    plot.false(df)
+    dev.off()
 
+    postscript("../../../paper/missed.eps")
+    plot.missed(df)
+    dev.off()
+
+    postscript("../../../paper/false.eps")
+    plot.false(df)
+    dev.off()
+
+    postscript("../../../paper/hist-maxd.eps", width=6, height=5)
     df <- read.compare.tracks()
     hist.max_d(df)
+    dev.off()
 }

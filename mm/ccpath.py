@@ -5,7 +5,8 @@ from ccdef import *
 def new_path_from_es(gw, tid, es):
     if gw is None:
         return None
-    return Path(gw = gw, tid = tid, es = es, ways = None, lonlats = None)
+    p = Path(gw = gw, tid = tid, es = es, ways = None, lonlats = None)
+    return p
 
 def new_path_from_db(gw, str_tid, str_way_ids, geom):
     tid = int(str_tid)
@@ -263,5 +264,21 @@ class Path(object):
         result['missed_length']  = sum([gw.G[s][t]['length'] for s,t,i in (gt_es - es)])
         result['false_length']   = sum([gw.G[s][t]['length'] for s,t,i in (es - gt_es)])
         return result
+
+    def smooth(self):
+        es = [self.es[0]]
+        for e in self.es:
+            if e in es:
+                te = es.pop()
+                while te != e:
+                    te = es.pop()
+            es.append(e)
+        self.es = es
+
+    def hough_by_lonlats(self):
+        lonlats = self.get_lonlats()
+        o = [0,0]
+        hough = [lonlats2hough(a,b,o) for a, b in zip(lonlats[1:], lonlats[:-1])]
+        return hough
 
 

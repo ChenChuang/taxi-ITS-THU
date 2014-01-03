@@ -1,7 +1,9 @@
 import ccdb as cdb
 
-from_tid = 1;
-to_tid = 1000;
+from_tid = 1000200;
+to_tid = 2638410;
+# max(tid) == 2638410
+
 
 def insert_tracks_attr():
     trd = cdb.new_track_reader()
@@ -12,7 +14,8 @@ def insert_tracks_attr():
     
     for tid in xrange(from_tid, to_tid+1):
         track = trd.fetch_by_id(tid)
-        print track.tid
+        if track.tid % 100 == 0:
+            print track.tid
         tawd.insert_update(track)
     
     del trd

@@ -48,6 +48,8 @@ def match(gw, track, debug = False):
         gpdag = list(p_dag)
         global ges
         ges = list(es)
+
+    ## p.smooth()
     return p
 
 

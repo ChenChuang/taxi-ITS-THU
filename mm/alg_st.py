@@ -38,6 +38,8 @@ def match(gw, track, debug = False):
             return None
     except:
         return None
+
+    ## p.smooth()
     return p
 
 def create_dag(gw, track, k=5, r=0.1, sigma=0.02):

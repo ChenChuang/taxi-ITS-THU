@@ -53,7 +53,7 @@ class PT2Geojson(object):
             self.export_track_by_id(path.tid)
         return True
 
-    def write_p_geojson(self, path):
+    def write_p_geojson(self, path, sample=None):
         jdict = {}
         jdict["type"] = "FeatureCollection"
         geo = {}
@@ -67,7 +67,10 @@ class PT2Geojson(object):
         
         jdict["features"] = features
         
-        filename = self.output_dir_p + self.output_prefix_p + self.method + "_" + str(path.tid) + ".json"
+        filename = self.output_dir_p + self.output_prefix_p + self.method + "_" + str(path.tid)
+        if sample is not None:
+            filename = filename + "_" + str(sample)
+        filename += ".json"
         with open(filename, "w") as f:
             f.write(js.dumps(jdict))
 

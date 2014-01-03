@@ -20,8 +20,19 @@ bn.tid = st.tid and
 bn.tid = iv.tid and 
 bn.tid = ut.tid and 
 bn.tid = uti.tid and not (
-bn.way_ids = st.way_ids and 
-bn.way_ids = iv.way_ids and 
-bn.way_ids = ut.way_ids and 
-bn.way_ids = uti.way_ids
+
+( bn.way_ids like '%'||st.way_ids||'%' or st.way_ids like '%'||bn.way_ids||'%' ) and
+( bn.way_ids like '%'||iv.way_ids||'%' or iv.way_ids like '%'||bn.way_ids||'%' ) and 
+( bn.way_ids like '%'||ut.way_ids||'%' or ut.way_ids like '%'||bn.way_ids||'%' ) and 
+( bn.way_ids like '%'||uti.way_ids||'%' or uti.way_ids like '%'||bn.way_ids||'%' ) and
+ 
+( st.way_ids like '%'||iv.way_ids||'%' or iv.way_ids like '%'||st.way_ids||'%' ) and 
+( st.way_ids like '%'||ut.way_ids||'%' or ut.way_ids like '%'||st.way_ids||'%' ) and 
+( st.way_ids like '%'||uti.way_ids||'%' or uti.way_ids like '%'||st.way_ids||'%' ) and
+
+( iv.way_ids like '%'||ut.way_ids||'%' or ut.way_ids like '%'||iv.way_ids||'%' ) and 
+( iv.way_ids like '%'||uti.way_ids||'%' or uti.way_ids like '%'||iv.way_ids||'%' ) and
+
+( ut.way_ids like '%'||uti.way_ids||'%' or uti.way_ids like '%'||ut.way_ids||'%' ) 
+
 );

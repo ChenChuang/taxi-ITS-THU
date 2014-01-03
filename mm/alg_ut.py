@@ -222,11 +222,32 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                     cv_n_e_before = visited[cv][5]
                     cv_n_tr_before = visited[cv][6]
 
+                    # find the shared part of path of cv and visited[cv][0], we compare the turns number of the rest.
+                    tmp_cv_share_n_tr = 0
+                    if cv_n_tr > 0 and cv_n_tr_before > 0:
+                        tmp_cv = cv_pre
+                        tmp_cv_path = []
+                        while tmp_cv >= 0:
+                            tmp_cv_path.append(tmp_cv)
+                            tmp_cv = visited[tmp_cv][0]
+                    
+                        tmp_cv = visited[cv][0]
+                        while tmp_cv >= 0:
+                            if tmp_cv in tmp_cv_path:
+                                tmp_cv_share_n_tr = visited[tmp_cv][6]
+                                break
+                            tmp_cv = visited[tmp_cv][0]
+                    tmp_cv_n_tr = cv_n_tr - tmp_cv_share_n_tr
+                    tmp_cv_n_tr_before = cv_n_tr_before - tmp_cv_share_n_tr
+
+
                     # if cv_n_e_before > 0 and float(cv_s_u) / cv_n_e > float(cv_s_u_before) / cv_n_e_before:
                     # if cv_s_t < cv_s_t_before:
                     # if cv_s_l < cv_s_l_before:
-                    if cv_n_tr == 0 and cv_n_tr_before > 0:
+                    if tmp_cv_n_tr == 0 and tmp_cv_n_tr_before > 0:
                         is_to_add = True
+                    elif tmp_cv_n_tr > 0 and tmp_cv_n_tr_before == 0:
+                        is_to_add = False
                     elif cv_s_lu / (cv_s_l+0.0000001) > cv_s_lu_before / (cv_s_l_before+0.0000001): 
                         is_to_add = True
     
@@ -290,7 +311,18 @@ def match(gw, track):
     # update_ways_weight(p, track)
     # update_ways_weight_proj(p, track)
 
+    p.smooth()
     return p
+
+def avg_used_times_of_edges(gw, es, km1, km2):
+    kms = [km for km in gw.get_edges_attr(es, 'length')]
+    kms[0] = km1
+    kms[-1] = km2
+    uts = [ways_used_times[wid-1] for wid in gw.get_edges_attr(es, 'wid')]
+    try:
+        return sum([km*ut for km,ut in zip(kms,uts)]) / sum(kms)
+    except:
+        return 0
 
 def track2path(gw, track, k=5, r=0.1, sigma=0.02):
     dag = nx.DiGraph()
@@ -336,9 +368,9 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
                     l_s = proj['l_s'], \
                     l_t = proj['l_t'], \
                     d_proj = proj['d_proj'], \
-                    weight = proj['d_proj'])
+                    ## weight = 10*proj['d_proj'])
                     ## weight = -math.log(norm(0,sigma).pdf(proj['d_proj'])))
-                    ## weight = 0)
+                    weight = 0)
             # the source vertexes
             if i == 0:
                 min_sw_dict[(i,ii)] = 0
@@ -372,15 +404,19 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
                 # 2) weight of path between ii and jj
                 if t_ii == s_jj:
                     p_tii_sjj = ()
-                    ## w_tii_sjj = ii_proj['l_t'] + jj_proj['l_s']
-                    w_tii_sjj = ii_proj['l_t'] + jj_proj['l_s']
+                    
+                    w_tii_sjj_l = ii_proj['l_t'] + jj_proj['l_s']
+                    w_tii_sjj_u = avg_used_times_of_edges(gw, [(s_ii,t_ii), (s_jj,t_jj)], ii_proj['l_t'], jj_proj['l_s'])
+                    w_tii_sjj_t = ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
                 
                 elif t_ii == t_jj and s_ii == s_jj:
                     p_tii_sjj = ()
-                    ## w_tii_sjj = jj_proj['l_s'] - ii_proj['l_s']
-                    w_tii_sjj = jj_proj['l_s'] - ii_proj['l_s']
                     
-                    if w_tii_sjj < 0:
+                    w_tii_sjj_l = jj_proj['l_s'] - ii_proj['l_s']
+                    w_tii_sjj_u = avg_used_times_of_edges(gw, [(s_ii,t_ii)], jj_proj['l_s'] - ii_proj['l_s'], jj_proj['l_s'] - ii_proj['l_s'])
+                    w_tii_sjj_t = ii_proj['l_t']/speed_ii - jj_proj['l_s']/speed_jj
+                    
+                    if jj_proj['l_s'] - ii_proj['l_s'] < 0:
                         ## p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj, 'time')
                         ## p_tii_sjj = best_path_from_to_slow(gw, t_ii, s_jj)
                         p_tii_sjj = best_path_from_to(gw, t_ii, s_jj, 
@@ -390,10 +426,13 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
                                 to_edge = (s_jj, t_jj))
 
                         if not len(p_tii_sjj) > 0:
-                            w_tii_sjj = INF
+                            w_tii_sjj_l = INF
+                            w_tii_sjj_u = -INF
+                            w_tii_sjj_t = INF
                         else:
-                            w_tii_sjj = gw.length_of_edges(p_tii_sjj) + ii_proj['l_t'] + jj_proj['l_s']
-                            ## w_tii_sjj = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
+                            w_tii_sjj_l = gw.length_of_edges(p_tii_sjj) + ii_proj['l_t'] + jj_proj['l_s']
+                            w_tii_sjj_u = avg_used_times_of_edges(gw, p_tii_sjj, ii_proj['l_t'], jj_proj['l_s'])
+                            w_tii_sjj_t = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
                 
                 else:
                     ## p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj, 'time')
@@ -405,64 +444,30 @@ def track2path(gw, track, k=5, r=0.1, sigma=0.02):
                             to_edge = (s_jj, t_jj))
 
                     if not len(p_tii_sjj) > 0:
-                        w_tii_sjj = INF
+                        w_tii_sjj_l = INF
+                        w_tii_sjj_u = -INF
+                        w_tii_sjj_t = INF
                     else:
-                        w_tii_sjj = gw.length_of_edges(p_tii_sjj) + ii_proj['l_t'] + jj_proj['l_s']
-                        ## w_tii_sjj = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
+                        w_tii_sjj_l = gw.length_of_edges(p_tii_sjj) + ii_proj['l_t'] + jj_proj['l_s']
+                        w_tii_sjj_u = avg_used_times_of_edges(gw, p_tii_sjj, ii_proj['l_t'], jj_proj['l_s'])
+                        w_tii_sjj_t = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
                 
                 # add edge between ii and jj to DAG
-                # w_tii_sjj = math.exp(-w_tii_sjj)
+                ## w_tii_sjj = math.exp(-w_tii_sjj)
+                ## w_tii_sjj = w_tii_sjj_u / max(w_tii_sjj_l, 0.00001)
+                ## w_tii_sjj = w_tii_sjj_l / max(w_tii_sjj_u, 0.00001)
+                w_tii_sjj = w_tii_sjj_t
                 dag.add_edge((i, ii), (j, jj), path = p_tii_sjj, weight = w_tii_sjj)
         
-        for jj in range(0,len(j_projs)):
-            min_sw_j_jj = INF
-            min_ii = None
-            for tmp_ii in range(0,len(i_projs)):
-                min_sw_i_ii = min_sw_dict[(i, tmp_ii)] 
-                tmp_sw_j_jj = min_sw_i_ii + dag[(i,tmp_ii)][(j,jj)]['weight']
-                if tmp_sw_j_jj < min_sw_j_jj:
-                    min_sw_j_jj = tmp_sw_j_jj
-                    min_ii = tmp_ii
-            min_sw_dict[(j,jj)] = min_sw_j_jj
-            pre_dict[(j,jj)] = (i, min_ii)
-
-    # find the sink vertex with minimum sum of weights
-    min_sw_j_jj = INF
-    j = len(projss) - 1
-    min_jj = -1
-    for jj in range(0,len(projss[-1])):
-        sw_j_jj = min_sw_dict[(j,jj)]
-        if sw_j_jj < min_sw_j_jj:
-            min_sw_j_jj = sw_j_jj
-            min_jj = jj
-
-    if min_jj < 0:
-        raise Exception("min_jj < 0")
-
-    # backward from best sink vertex, generate the path in DAG
-    pdag = []
-    v = (j,min_jj)
-    while True:
-        pdag.append(v)
-        pv = pre_dict[v]
-        if pv is None:
-            raise Exception("backward failed")
-        if pv == -1:
-            break
-        else:
-            v = pv
-
-    pdag = pdag[::-1]
-
-
     def combine_weight_with(sw_cv, w_cv_nv, w_nv):
         return sw_cv + w_cv_nv + w_nv
-
+        
     def init_weight_with(w_source_v):
         return w_source_v
 
     pdag = cdagm.shortest_path_dag(dag, init_weight_with, combine_weight_with)   
-
+    ## pdag = cdagm.longest_path_dag(dag, init_weight_with, combine_weight_with)   
+    
     # generating es from pdag
     vds = dag.nodes(data = True)
     vds_dict = {}

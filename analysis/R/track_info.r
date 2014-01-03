@@ -2,9 +2,9 @@ library(xts)
 Sys.setenv(TZ = "UTC")
 
 trajectorydir <- "/home/chenchuang/beijing_taxi_proc_output/occupied"
-MAXCUID <- 3
+MAXCUID <- 1000
 
-if(F) {
+if(T) {
 alldata <- list()
 for(cuid in 1:MAXCUID) {
     cat("Reading CUID:", cuid, "...")
@@ -20,7 +20,7 @@ for(cuid in 1:MAXCUID) {
 }
 }
 
-if(F) {
+if(T) {
 alldata.xts <- list()
 for(i in 1:length(alldata)) {
     alldata.xts[[i]] <- alldata[[i]]
@@ -29,7 +29,7 @@ for(i in 1:length(alldata)) {
 }
 }
 
-if(F) {
+if(T) {
 alldata.intervals <- array()
 for(i in 1:length(alldata.xts)) {
     l <- length(alldata.xts[[i]])
@@ -78,7 +78,7 @@ trip.records.num <- function(x) length(x)
 trip.time <- function(x) trip.des.time(x) - trip.ori.time(x)
 }
 
-if(T) {
+if(F) {
 trips.records.nums <- sapply(alldata.xts.trips, trip.records.num, simplify = T, USE.NAMES = T)
 trips.times <- sapply(alldata.xts.trips, trip.time, simplify = T, USE.NAMES = T)
 

@@ -128,11 +128,25 @@ class Track(object):
         return self.desc
 
     def sample(self, interval):
-        rds = list(self.rds[::interval])
+        rds = list(self.rds[::interval]) 
+        
+        tmp_desc = self.desc.split(',')
+        desc = tmp_desc[::interval]
+        
         if len(self.rds) - 1 % interval != 0:
             rds.append(self.rds[-1])
-        self.rds = rds
-        self.desc = ",".join(self.desc.split(',')[::interval])
+            desc.append(tmp_desc[-1])
 
+        self.rds = rds
+        self.desc = ",".join(desc)
+
+    def sample_head_tail(self):
+        rds = [self.rds[0], self.rds[-1]]
+        
+        tmp_desc = self.desc.split(',')
+        desc = [tmp_desc[0], tmp_desc[-1]]
+        
+        self.rds = rds
+        self.desc = ",".join(desc)
 
 

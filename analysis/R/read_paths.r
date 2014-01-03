@@ -21,7 +21,7 @@ read.paths <- function() {
     drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname="beijing_taxi", user="postgres")
 	
-    max_tid      = 100000
+    max_tid      = 10000
     path_tb      = "taxi_paths_bn"
     path_attr_tb = "taxi_paths_bn_attr"
     

@@ -21,6 +21,7 @@ function init() {
     init_star();
     init_ranks();
     init_map();
+    document.onkeypress = on_key_press;
 }
 
 function init_ranks() {
@@ -39,16 +40,28 @@ function init_map() {
 	map = new OpenLayers.Map('map');
 
 	osm_layer = new OpenLayers.Layer.OSM("OpenLayers OSM");
-	var defaultstyle = new OpenLayers.Style({strokeColor:"#000000", strokeWidth:2, strokeOpacity:1});
-	var tempstyle = new OpenLayers.Style({strokeColor:"#ff0000", strokeWidth:3, strokOpacity:1.0});
-	var selectstyle = new OpenLayers.Style({strokeColor:"#0000ff", strokeWidth:3, strokOpacity:1.0});
-	vector_layer = new OpenLayers.Layer.Vector("routelayer", {styleMap: new OpenLayers.StyleMap({'default':defaultstyle, 'temporary':tempstyle, 'select':selectstyle})});
+	var defaultstyle = new OpenLayers.Style({
+        strokeColor:"#000000", 
+        strokeWidth:2, strokeOpacity:1});
+	var tempstyle = new OpenLayers.Style({
+        strokeColor:"#ff0000", 
+        strokeWidth:3, strokOpacity:1.0});
+	var selectstyle = new OpenLayers.Style({
+        strokeColor:"#0000ff", 
+        strokeWidth:3, strokOpacity:1.0});
+	vector_layer = new OpenLayers.Layer.Vector("routelayer", {styleMap: new OpenLayers.StyleMap({
+        'default':defaultstyle, 
+        'temporary':tempstyle, 
+        'select':selectstyle})});
 	point_layer = new OpenLayers.Layer.Vector("pointlayer");
 	
 	map.addLayers([osm_layer, vector_layer, point_layer]);
 
 
-	var highlightctrl = new OpenLayers.Control.SelectFeature(vector_layer, {hover:true, highlightOnly:true, renderIntent:"temporary"});
+	var highlightctrl = new OpenLayers.Control.SelectFeature(vector_layer, {
+        hover:true, 
+        highlightOnly:true, 
+        renderIntent:"temporary"});
 	map.addControl(highlightctrl);
 	highlightctrl.activate();
 
@@ -98,6 +111,16 @@ function init_alg_buttons() {
     }
 }
 
+function on_key_press(e) {
+    e = (e) ? e : window.event;
+    if (49 <= e.charCode <= 53 && document.activeElement.id != "fromtid_tx" && document.activeElement.id != "totid_tx") {
+        set_alg_rank(e.charCode - 48);
+        set_alg_button(alg, ranks[alg])
+        $('#star').raty('score', get_alg_rank()); 
+    }
+}
+
+
 function set_star(rank) {
     $('#star').raty({ score: rank });
 }
@@ -119,14 +142,24 @@ function get_alg() {
 }
 
 function get_tids_compare(fromtid, totid) {
-	url = "../php/get_tids_compare.php";
-	tid_i = -1;
-	$.ajax({
-		url: url,
-		data: {fromtid:fromtid, totid:totid},
-  		success: get_tids_done,
-		error: info_error
-	});
+	if(totid < 0) {
+        if(fromtid >= 0) {
+            tids = Array()
+            tids[0] = {'tid':fromtid};
+            tid_i = -1;
+            next();
+            set_tid_info('TID: ' + fromtid);
+        }
+    }else{
+        url = "../php/get_tids_compare.php";
+	    tid_i = -1;
+	    $.ajax({
+		    url: url,
+		    data: {fromtid:fromtid, totid:totid},
+  		    success: get_tids_done,
+		    error: info_error
+	    });
+    }
 }
 
 function get_tids_done(data) {
@@ -158,7 +191,11 @@ function next() {
 }
 
 function upload_ranks() {
-	url = "../php/upload_ranks.php"
+	url = "../php/upload_ranks.php";
+    for (var k in ranks) {
+        ranks[k] = Math.max(1, ranks[k]);
+        ranks[k] = Math.min(5, ranks[k]);
+    }
 	$.ajax({
 		url: url,
 		data: $.extend({tid:tid}, ranks),

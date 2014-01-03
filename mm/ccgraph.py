@@ -108,6 +108,7 @@ class GraphWrapper(object):
                     s, 
                     t, 
                     way_id = way_id, 
+                    wid = way_id,
                     weight = 1,
                     time = length / speed,
                     length = length, 
@@ -121,6 +122,7 @@ class GraphWrapper(object):
                         t, 
                         s, 
                         way_id = way_id,
+                        wid = way_id,
                         weight = 1,
                         time = length / speed, 
                         length = length, 
@@ -391,6 +393,9 @@ class GraphWrapper(object):
             l = l + self.G[e[0]][e[1]]['length']
         return l
 
+    def wids_of_edges(self, es):
+        return self.get_edges_attr(es, 'way_id')
+
     def get_edges_attr(self, es, attr):
         attrs = []
         for e in es:
@@ -499,5 +504,34 @@ def lonlats2geom(lonlats):
     sg = sg[:-1]
     sg = sg + ")"
     return sg
+
+def lonlats2hough(s_lonlat, t_lonlat, o_lonlat=[0,0]):
+    s = list(lonlat2xykm(s_lonlat))
+    t = list(lonlat2xykm(t_lonlat))
+    o = list(lonlat2xykm(o_lonlat))
+    return xys2hough(s,t,o)
+
+def xys2hough(s, t, o=[0,0]):
+    s[0] -= o[0]
+    s[1] -= o[1]
+    t[0] -= o[0]
+    t[1] -= o[1]
+    A = s[1] - t[1]
+    B = t[0] - s[0]
+    C = (t[1] - s[1])*s[0] + (s[0] - t[0])*s[1]
+    if A == 0 and B == 0:
+        return None
+    d = abs(C) / math.sqrt(A**2 + B**2)
+    if abs(B) > 0.0001:
+        angle = math.atan(-A/B)
+    else:
+        angle = math.pi / 2
+    if B < 0:
+        angle = angle + math.pi
+    if angle < 0:
+        angle = angle + math.pi*2
+    return [d, angle]
+
+
 
 

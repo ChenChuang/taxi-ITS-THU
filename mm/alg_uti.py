@@ -263,11 +263,33 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                     cv_n_e_before = visited[cv][5]
                     cv_n_tr_before = visited[cv][6]
 
+                    # find the shared part of path of cv and visited[cv][0], we compare the turns number of the rest.
+                    tmp_cv_share_n_tr = 0
+                    if cv_n_tr > 0 and cv_n_tr_before > 0:
+                        tmp_cv = cv_pre
+                        tmp_cv_path = []
+                        while tmp_cv >= 0:
+                            tmp_cv_path.append(tmp_cv)
+                            tmp_cv = visited[tmp_cv][0]
+                    
+                        tmp_cv = visited[cv][0]
+                        while tmp_cv >= 0:
+                            if tmp_cv in tmp_cv_path:
+                                tmp_cv_share_n_tr = visited[tmp_cv][6]
+                                break
+                            tmp_cv = visited[tmp_cv][0]
+                    tmp_cv_n_tr = cv_n_tr - tmp_cv_share_n_tr
+                    tmp_cv_n_tr_before = cv_n_tr_before - tmp_cv_share_n_tr
+
+
+
                     # if cv_n_e_before > 0 and float(cv_s_u) / cv_n_e > float(cv_s_u_before) / cv_n_e_before:
                     # if cv_s_t < cv_s_t_before:
                     # if cv_s_l < cv_s_l_before:
-                    if cv_n_tr == 0 and cv_n_tr_before > 0:
+                    if tmp_cv_n_tr == 0 and tmp_cv_n_tr_before > 0:
                         is_to_add = True
+                    elif tmp_cv_n_tr > 0 and tmp_cv_n_tr_before == 0:
+                        is_to_add = False
                     elif cv_s_lu / (cv_s_l+0.0000001) > cv_s_lu_before / (cv_s_l_before+0.0000001): 
                         is_to_add = True
 
@@ -334,6 +356,7 @@ def match(gw, track):
     # update_ways_weight(p, track)
     # update_ways_weight_proj(p, track)
 
+    best_p.smooth()
     return best_p
 
 def track2path(gw, track, path_selector, k=5, r=0.1, sigma=0.02, **kwargs):
@@ -380,7 +403,7 @@ def track2path(gw, track, path_selector, k=5, r=0.1, sigma=0.02, **kwargs):
                     l_s = proj['l_s'], \
                     l_t = proj['l_t'], \
                     d_proj = proj['d_proj'], \
-                    weight = proj['d_proj'])
+                    weight = 10*proj['d_proj'])
                     ## weight = -math.log(norm(0,sigma).pdf(proj['d_proj'])))
                     ## weight = 0)
             # the source vertexes
@@ -475,33 +498,34 @@ def track2path(gw, track, path_selector, k=5, r=0.1, sigma=0.02, **kwargs):
     
 
 
-    # find the sink vertex with minimum sum of weights
-    min_sw_j_jj = INF
-    j = len(projss) - 1
-    min_jj = -1
-    for jj in range(0,len(projss[-1])):
-        sw_j_jj = min_sw_dict[(j,jj)]
-        if sw_j_jj < min_sw_j_jj:
-            min_sw_j_jj = sw_j_jj
-            min_jj = jj
+    if False:
+        # find the sink vertex with minimum sum of weights
+        min_sw_j_jj = INF
+        j = len(projss) - 1
+        min_jj = -1
+        for jj in range(0,len(projss[-1])):
+            sw_j_jj = min_sw_dict[(j,jj)]
+            if sw_j_jj < min_sw_j_jj:
+                min_sw_j_jj = sw_j_jj
+                min_jj = jj
 
-    if min_jj < 0:
-        return None
-
-    # backward from best sink vertex, generate the path in DAG
-    pdag = []
-    v = (j,min_jj)
-    while True:
-        pdag.append(v)
-        pv = pre_dict[v]
-        if pv is None:
+        if min_jj < 0:
             return None
-        if pv == -1:
-            break
-        else:
-            v = pv
 
-    pdag = pdag[::-1]
+        # backward from best sink vertex, generate the path in DAG
+        pdag = []
+        v = (j,min_jj)
+        while True:
+            pdag.append(v)
+            pv = pre_dict[v]
+            if pv is None:
+                return None
+            if pv == -1:
+                break
+            else:
+                v = pv
+
+        pdag = pdag[::-1]
 
     def combine_weight_with(sw_cv, w_cv_nv, w_nv):
         return sw_cv + w_cv_nv + w_nv
@@ -511,7 +535,8 @@ def track2path(gw, track, path_selector, k=5, r=0.1, sigma=0.02, **kwargs):
 
     pdag = cdagm.shortest_path_dag(dag, init_weight_with, combine_weight_with)
 
-
+    if pdag is None:
+        return None
 
     # generating es from pdag
     vds = dag.nodes(data = True)

@@ -48,8 +48,8 @@ def new_path_attr_writer_for_method(method):
         tbname = tbname + "_attr"
         return new_path_attr_writer(tbname)
 
-def new_track_reader(limit=10000, offset=0):
-    return TrackReader(tbname="taxi_tracks", limit=limit, offset=offset)
+def new_track_reader(tbname="taxi_tracks", limit=10000, offset=0):
+    return TrackReader(tbname=tbname, limit=limit, offset=offset)
 
 def new_track_reader_for_purpose(purpose, limit=10000, offset=0):
     tbname = tbname_of_purpose(purpose)
@@ -286,6 +286,13 @@ class PathReader(DB):
         self.gw = gw
 
         self.query_more()
+    
+    def get_all_tids(self):
+        sql = "select tid from " + self.tbname
+        self.cursor.execute(sql) 
+        rs = [row[0] for row in self.cursor.fetchall()]
+        rs.sort()
+        return rs
 
     def query_more(self):
         sql = "select tid, way_ids, st_astext(path_geom) as geom from " + self.tbname + " limit %s offset %s"
@@ -337,6 +344,13 @@ class TrackReader(DB):
         self.fetched_num = 0
 
         self.query_more()
+
+    def get_all_tids(self):
+        sql = "select id from " + self.tbname
+        self.cursor.execute(sql) 
+        rs = [row[0] for row in self.cursor.fetchall()]
+        rs.sort()
+        return rs
 
     def query_more(self):
         sql = "select id, cuid, st_astext(track_geom) as geom, track_desc from " + self.tbname + " limit %s offset %s"

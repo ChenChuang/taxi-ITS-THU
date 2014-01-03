@@ -36,6 +36,8 @@ def match(gw, track, debug = False):
         gpdag = list(p_dag)
         global ges
         ges = list(es)
+    
+    p.smooth()
     return p
 
 def create_dag(gw, track, r=0.1):
@@ -95,29 +97,36 @@ def create_dag(gw, track, r=0.1):
                 # 2) weight of path between ii and jj
                 if t_ii == s_jj:
                     p_tii_sjj = ()
-                    w_tii_sjj = ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
+                    w_tii_sjj_l = ii_proj['l_t'] + jj_proj['l_s']
+                    w_tii_sjj_t = ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
                 
                 elif t_ii == t_jj and s_ii == s_jj:
                     p_tii_sjj = ()
-                    w_tii_sjj = (jj_proj['l_s'] - ii_proj['l_s'])/speed_ii
+                    w_tii_sjj_l = jj_proj['l_s'] - ii_proj['l_s']
+                    w_tii_sjj_t = (jj_proj['l_s'] - ii_proj['l_s'])/speed_ii
                     
-                    if w_tii_sjj < 0:
+                    if w_tii_sjj_l < 0:
                         p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj, 'time')
                         
                         if not len(p_tii_sjj) > 0:
-                            w_tii_sjj = INF
+                            w_tii_sjj_l = INF
+                            w_tii_sjj_t = INF
                         else:
-                            w_tii_sjj = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
+                            w_tii_sjj_l = gw.length_of_edges(p_tii_sjj) + ii_proj['l_t'] + jj_proj['l_s']
+                            w_tii_sjj_t = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
                 
                 else:
                     p_tii_sjj = gw.shortest_path_from_to(t_ii, s_jj, 'time')
                     
                     if not len(p_tii_sjj) > 0:
-                        w_tii_sjj = INF
+                        w_tii_sjj_l = INF
+                        w_tii_sjj_t = INF
                     else:
-                        w_tii_sjj = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
+                        w_tii_sjj_l = gw.length_of_edges(p_tii_sjj) + ii_proj['l_t'] + jj_proj['l_s']
+                        w_tii_sjj_t = gw.time_of_edges(p_tii_sjj) + ii_proj['l_t']/speed_ii + jj_proj['l_s']/speed_jj
                 
                 # add edge between ii and jj to DAG
+                w_tii_sjj = w_tii_sjj_l
                 dag.add_edge((i, ii), (j, jj), path = p_tii_sjj, weight = w_tii_sjj)
                 
     return dag

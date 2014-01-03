@@ -7,44 +7,21 @@ import ccpath as cp
 import ccgeojson as cj
 import ccdb as cdb
 
-import alg_bn as abn
-import alg_st as ast
-import alg_iv as aiv
-import alg_ut as aut
-import alg_uti as auti
+import alg_uti as alg
 
-import networkx as nx
-# import matplotlib.pyplot as plt
+from_tid = 1
+to_tid = 10000000
+max_fetched = 10000
 
-TRACKS_FROM_ROW = 1
-TRACKS_TO_ROW = 1000
-
-TRACKS_FROM_TID = 1
-TRACKS_TO_TID = 1000
-
-# METHOD = 'bn'
-# METHOD = 'st'
-# METHOD = 'iv'
-METHOD = 'ut'
-# METHOD = 'uti'
-
-print sys.argv
-if len(sys.argv) == 2:
-    METHOD = sys.argv[1]
-
-algs = {'bn':abn, 'st':ast, 'iv':aiv, 'ut':aut, 'uti':auti}
-alg = algs[METHOD]
+method = 'uti'
 
 gw = cg.new_gw()
-trd = cdb.new_track_reader_for_purpose(purpose="mm")
-pwd = cdb.new_path_writer_for_method(method = METHOD)
-pawd = cdb.new_path_attr_writer_for_method(method = METHOD)
-pt2j = cj.new_pt2geojson(method = METHOD)
+trd = cdb.new_track_reader(tbname = "taxi_tracks_gt_1")
+pwd = cdb.new_path_writer(tbname = "taxi_paths_gt_1")
+pawd = cdb.new_path_attr_writer(tbname = "taxi_paths_gt_1_attr")
+pt2j = cj.new_pt2geojson(method = method)
 
 def match(track):
-    # print "t2json..",
-    # pt2j.write_t_geojson(track)
-    
     print "Matching..",
     path = alg.match(gw, track)
 
@@ -66,7 +43,7 @@ def match(track):
 
 def mm():
     print ''
-    print 'method',METHOD
+    print 'generating ground truth','----','method',method,'----'
     print ''
     start_at = datetime.datetime.now()
     print (' start at ' + str(start_at) + ' ').center(70, '-')
@@ -77,13 +54,12 @@ def mm():
 
     tracks_num = 0
     paths_failed = 0
-    max_fetched = TRACKS_TO_ROW - TRACKS_FROM_ROW + 1
 
     start_match_at = datetime.datetime.now()
     print (' start matching at ' + str(start_match_at) + ' ').center(70, '-') 
 
-    while TRACKS_TO_ROW < 0 or trd.fetched_num < max_fetched:
-        if tracks_num >= TRACKS_TO_TID - TRACKS_FROM_TID + 1:
+    while max_fetched < 0 or trd.fetched_num < max_fetched:
+        if tracks_num >= to_tid - from_tid + 1:
             break
 
         track = trd.fetch_one()
@@ -92,7 +68,7 @@ def mm():
             print "fetched",trd.fetched_num
         if track is None:
             break
-        if track.length() == 0 or track.tid < TRACKS_FROM_TID or track.tid > TRACKS_TO_TID:
+        if track.length() == 0 or track.tid < from_tid or track.tid > to_tid:
             continue
         else:
             tracks_num += 1
@@ -101,21 +77,13 @@ def mm():
         if not match(track):
             paths_failed += 1
 
-        ## if METHOD == "UT":
-            ## aut.update_graph(tracks_num, gw)
-
     end_match_at = datetime.datetime.now()
     print (' end matching at ' + str(end_match_at) + ' ').center(70, '-'),'elapsed time',str(end_match_at - start_match_at)
 
-    print "fetched tracks: %s, tracks in (%s, %s): %s, paths failed: %s" % (trd.fetched_num, TRACKS_FROM_TID, TRACKS_TO_TID, tracks_num, paths_failed)
+    print "fetched tracks: %s, tracks in (%s, %s): %s, paths failed: %s" % (trd.fetched_num, from_tid, to_tid, tracks_num, paths_failed)
     
     print ''.center(70, '-')
 
-    if METHOD == "UT":
-        # print 'writing ways statistics..',
-        # aut.write_ways_attrs()
-        # print 'end'
-        pass
     clear()
 
     end_at = datetime.datetime.now()
