@@ -85,6 +85,49 @@ read.compare.tracks <- function() {
     return(rs)
 }
 
+read.sample.attr <- function(filename='sample_maxd.txt') {
+    # filename <- 'sample_maxd.txt'
+    # filename <- 'sample_avgd.txt'
+    df <- read.table(filename,
+                     header=T, dec='.', sep=',', quot='\n')
+    return(df)
+}
+
+hist.sample.avgd <- function(df) {
+    legends <- c('Sample interval = 2', 'Sample interval = 4', 'Sample interval = 6', 'Sample interval = 8')
+    ma <- NULL
+    for(i in seq(2, ncol(df))) {
+        h <- hist(df[,i], breaks=seq(from=0.0, to=2.1, by=0.3), plot=F)
+        if(is.null(ma)) {
+            ma <- h$counts
+        }else {
+            ma <- rbind(ma, h$counts)
+        }
+    }
+    cols <- c('chartreuse4','blue','darkorchid','red')
+    barplot(ma, beside=F, xlim=c(0,8.6), ylim=c(0,35), col=cols, xlab='Max Interval [km]', ylab='Number of Trajectories', cex.lab=1.5, cex.axis=1.5) 
+    legend('topright', legend=legends, fill=cols, border=F, bty="n", cex=1.5)
+    axis(1, at=seq(from=0.1,by=1.2,length.out=8), labels=c('0','0.3','0.6','0.9','1.2','1.5','1.8','2.1'), las=1, cex.axis=1.5)
+    box(bty = "o")
+}
+
+hist.sample.maxd <- function(df) {
+    legends <- c('Sample interval = 2', 'Sample interval = 4', 'Sample interval = 6', 'Sample interval = 8')
+    ma <- NULL
+    for(i in seq(2, ncol(df))) {
+        h <- hist(df[,i], breaks=seq(from=0.0, to=5.5, by=0.5), plot=F)
+        if(is.null(ma)) {
+            ma <- h$counts
+        }else {
+            ma <- rbind(ma, h$counts)
+        }
+    }
+    cols <- c('chartreuse4','blue','darkorchid','red')
+    barplot(ma, beside=F, ylim=c(0,25), col=cols, xlab='Max Interval [km]', ylab='Number', cex.lab=1.5, cex.axis=1.5) 
+    legend('topright', legend=legends, fill=cols, border=F, bty="n", cex=1.5)
+    axis(1, at=seq(from=0.1,by=2.4,length.out=6), labels=c('0','1','2','3','4','5'), las=1, cex.axis=1.5)
+    box(bty = "o")
+}
 hist.interval <- function(df) {
     hist(df$interval, breaks=25, xlab='Average interval [km]', main='')
 }
@@ -173,6 +216,14 @@ read.precisions <- function() {
     return(df)
 }
 
+read.precisions.maxd <- function() {
+    # filename <- 'sample_gt_1.txt'
+    filename <- 'sample_result_4.txt'
+    df <- read.table(filename,
+                     header=F, dec='.', col.names=c('method','maxda','maxdb','matched','missed','false'))
+    return(df)
+}
+
 plot.column <- function(df, col, yrange) {
     xrange <- c(1.8,8.2)
     # x11()
@@ -196,6 +247,28 @@ plot.column <- function(df, col, yrange) {
     legend(legendx, yrange[2]+0.007, legend=legends, col=cols, pch=plotchar, lty=linetype, lwd=2, bty="n", cex=1.5)
 }
 
+plot.column.maxd <- function(df, col, yrange) {
+    xrange <- c(0,6)
+    # x11()
+    require(Hmisc)
+    plot(xrange, yrange, xaxt="n", type="n", xlab="Maxd", ylab = capitalize(paste(col,"ratio")), cex.lab=1.5, cex.axis=1.5) 
+    linetype <- c(6,2,1,4) 
+    plotchar <- c(0, 1, 2, 15)
+    cols <- c('chartreuse4','blue','darkorchid','red')
+    text <- c('bn','st','iv','uti')
+    legends <- c('Shortest path','ST-Matching','IVVM','FM-Matching')
+    for(i in 1:4) {
+        s = df[df$method == text[i], 'matched'][2:12] + df[df$method == text[i], 'missed'][2:12] + 1
+        lines(seq(from=0.75, by=0.5, length.out=11), df[df$method == text[i], col][2:12]/s, type="b", lwd=2, col=cols[i], lty=linetype[i], pch=plotchar[i], xaxt='n', ann=F)
+    }
+    if(col == 'matched') {
+        legendx = xrange[2] - 2.7
+    }else{
+        legendx = xrange[1]
+    }
+    # axis(1, at=c(2,4,6,8), labels=c('2','4','6','8'), las=1, cex.axis=1.5)
+    legend(legendx, yrange[2]+0.007, legend=legends, col=cols, pch=plotchar, lty=linetype, lwd=2, bty="n", cex=1.5)
+}
 plot.matched <- function(df) {
     plot.column(df, 'matched', c(0.75,1.0))
 }
@@ -246,4 +319,11 @@ if(F) {
     df <- read.compare.tracks()
     hist.max_d(df)
     dev.off()
+
+    postscript("../../../paper/hist-sample-avgd.eps")
+    df <- read.sample.attr(filename <- 'sample_avgd.txt') 
+    hist.sample.avgd(df)
+    dev.off()
+
+
 }

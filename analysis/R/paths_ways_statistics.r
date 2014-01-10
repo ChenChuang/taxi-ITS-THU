@@ -100,9 +100,20 @@ if(debug) {
     }
 }
 
+read.ways.used_interval <- function() {
+    df.ways.attrs <- read.ways.attrs(c('id','used_times','used_interval','km','kmh'))
+    ways.num <- length(df.ways.attrs$id)
+    ways.used_interval <- list(rep(0, ways.num))
+    for(i in 1:ways.num) {
+        ways.used_interval[[i]] <- unlist(lapply(strsplit(df.ways.attrs[df.ways.attrs$id == i, 'used_interval'], ','), as.numeric))
+    }
+    return(ways.used_interval)
+}
+
 plot.way.used_interval <- function(i, ylim) {
     last <- ways.used_interval[[i]][10]
-    plot(seq(from=0,to=1.0,by=0.1), c(ways.used_interval[[i]], last), xlim=c(0,1), ylim = ylim, type = 's', xlab='Normalized Traveled Length', ylab='F-Feature')
+    plot(seq(from=0,to=1.0,by=0.1), c(ways.used_interval[[i]], last), 
+         xlim=c(0,1), ylim = ylim, type = 's', xlab='Normalized Traveled Length i', ylab='SF-Feature[i]', cex.lab=1.5, cex.axis=1.5)
     points(x=seq(from=0.05,to=0.95,by=0.1), y=ways.used_interval[[i]], type = "p")
 }
 
@@ -241,7 +252,18 @@ if(F) {
 
 
 if(F) {
-    plot.way.used_interval(5, c(0,200))
+    source('read_ways.r')
+    ways.used_interval <- read.ways.used_interval()
+
+    setEPS()
+    
+    postscript("../../../paper/way1.eps")
+    plot.way.used_interval(1136, c(0,400))
+    dev.off()
+    
+    postscript("../../../paper/way2.eps")
+    plot.way.used_interval(1872, c(0,800))
+    dev.off()
 }
 
 

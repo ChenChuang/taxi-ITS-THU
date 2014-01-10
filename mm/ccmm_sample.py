@@ -95,6 +95,7 @@ def compare():
                     print "failed"
                     continue
                 result = path.compare(gt_path)
+
                 matched_length[method][interval].append(result['matched_length'])
                 missed_length[method][interval].append(result['missed_length'])
                 false_length[method][interval].append(result['false_length'])

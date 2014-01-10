@@ -127,11 +127,16 @@ class Track(object):
     def get_desc(self):
         return self.desc
 
-    def sample(self, interval):
-        rds = list(self.rds[::interval]) 
+    def sample(self, interval, s=0):
+        if s < 0:
+            raise Exception('s < 0')
         
         tmp_desc = self.desc.split(',')
-        desc = tmp_desc[::interval]
+        desc = tmp_desc[s::interval]
+        rds = list(self.rds[s::interval])
+        if s > 0:
+            desc = [tmp_desc[0]] + desc
+            rds = [self.rds[0]] + rds
         
         if len(self.rds) - 1 % interval != 0:
             rds.append(self.rds[-1])
