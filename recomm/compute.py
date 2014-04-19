@@ -31,7 +31,7 @@ def compute():
     x = compute_x(amat, bmat, x0)
 
     wwt = WayWriter()
-    wwt.write_profits(x)
+    wwt.write_score(x)
 
 def compute_x(amat, bmat, x0, info=None):
     callback = Callback()
@@ -63,6 +63,8 @@ def cond(amat):
 
 def create_var_from_db():
     global var
+    # wwt = WayWriter()
+    # var = wwt.wids_npick_gt(0)
     # var = range(1, nr+1)
     var = range(1, 20)
     global nv
@@ -216,17 +218,54 @@ class PathReader(RemoteDB):
             elonlats = (row['elon'], row['elat'])
             yield [row['swid'], row['ewid'], row['l'], elonlats]
 
+    def npick(self, wid):
+        sql = "select count(*) from " + self.tbname + " where tid_s_wid = %s"
+        self.cursor.execute(sql, (str(wid),))
+        return int(self.cursor.fetchone()[0])
+    
+    def ndrop(self, wid):
+        sql = "select count(*) from " + self.tbname + " where tid_e_wid = %s"
+        self.cursor.execute(sql, (str(wid),))
+        return int(self.cursor.fetchone()[0])
+
 class WayWriter(RemoteDB):
-    def __init__(self, tbname = ""):
-        super(WayWriter, self).__init__()
+    def __init__(self, tbname = "road_score"):
+        super(WayWriter, self).__init__(database="beijing_mm_po")
         self.tbname = tbname
 
-    def write_profits(profits):
-        for (wid, p) in enumerate(profits):
-            sql = "update " + self.tbname + " set (profit) = (%s) where wid = %s"
-            self.cursor.execute(sql, (p, wid))
+    def write_score(self, scores):
+        for (wid, s) in enumerate(scores):
+            sql = "update " + self.tbname + " set (score) = (%s) where wid = %s"
+            self.cursor.execute(sql, (s, wid))
         self.conn.commit()
 
+    def write_npick(self):
+        prd = PathReader()
+        for wid in xrange(1, nr+1):
+            n = prd.npick(wid)
+            sql = "update " + self.tbname + " set (pickup_num) = (%s) where wid = %s"
+            self.cursor.execute(sql, (n, wid))
+        self.conn.commit()
+    
+    def write_ndrop(self):
+        prd = PathReader()
+        for wid in xrange(1, nr+1):
+            n = prd.ndrop(wid)
+            sql = "update " + self.tbname + " set (dropoff_num) = (%s) where wid = %s"
+            self.cursor.execute(sql, (n, wid))
+        self.conn.commit()
+
+    def wids_npick_gt(self, n):
+        sql = "select wid from " + self.tbname + " where pickup_num > %s"
+        self.cursor.execute(sql, (n,))
+        ws = self.cursor.fetchall()
+        return [w['wid'] for w in ws]
+    
+    def init_road_score(self):
+        for wid in xrange(1, nr+1):
+            sql = "insert into " + self.tbname + " values (%s, 0, 0, 0)"
+            self.cursor.execute(sql, (wid,))
+        self.conn.commit()
 
 def write_mat(amat, filename):
     if not filename.endswith('.mtx'):
