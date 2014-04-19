@@ -100,7 +100,12 @@ def create_Ab_from_db():
     bmat = npy.zeros((nv, 1))
     x0mat = npy.zeros((nv, 1))
     prd = PathReader()
-    gw = cg.new_gw()
+    gw = cg.new_gw(
+            database='beijing_mm_po', 
+            user='chenchuang', 
+            password='123456',
+            host='219.223.168.39',
+            port='5432')
 
     alpha = 0.5
     beta = 0.5

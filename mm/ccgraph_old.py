@@ -9,13 +9,15 @@ from ccdef import *
 
 gw = None
 
-def new_gw(**kwargs):
+DBNAME = "beijing_mm_po_car"
+
+def new_gw():
     global gw
     if gw is not None:
         return gw
 
     print 'loading...',
-    gw = GraphWrapper(**kwargs)
+    gw = GraphWrapper()
     print 'end'
 
     print 'creating graph...',
@@ -31,8 +33,7 @@ def new_gw(**kwargs):
 
 
 class GraphWrapper(object):
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
+    def __init__(self):
         self.G = None
         self.__ways_num = None
         self.__oneway_ways_num = None
@@ -283,33 +284,10 @@ class GraphWrapper(object):
         self.conn = None
         self.cursor = None
         try:
-            database = self.kwargs['database']
-        except KeyError, e:
-            database = 'beijing_mm_po_car'
-        try:
-            user = self.kwargs['user']
-        except KeyError, e:
-            user = 'postgres'
-        try:
-            password = self.kwargs['password']
-        except KeyError, e:
-            password = '123456'
-        try:
-            host = self.kwargs['host']
-        except KeyError, e:
-            host = 'localhost'
-        try:
-            port = self.kwargs['port']
-        except KeyError, e:
-            port = '5432' 
-
-        try:
             self.conn = pg.connect(
-                    database = database,
-                    user = user,
-                    password = password,
-                    host = host,
-                    port = port)
+                    database = DBNAME,
+                    user = 'postgres',
+                    password = '123456')
             self.cursor = self.conn.cursor(cursor_factory = pgextras.DictCursor)
             return True
         except pg.DatabaseError, e:
