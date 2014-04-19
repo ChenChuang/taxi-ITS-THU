@@ -38,6 +38,18 @@ hist.log.ways.used_times <- function(df.ways.attrs) {
 }
 
 # plot hist of used_times of ALL ways
+hist.log.rough.ways.used_times <- function(df.ways.attrs) {
+    a <- df.ways.attrs[['used_times']]
+    ah <- hist(a, breaks=12, plot=F)
+    ah$counts <- ah$counts + 1
+    # ah$counts <- log10(ah$counts + 1)
+    barplot(ah$counts, , log='y', beside=F, space=0, cex.lab=1.5, cex.axis=1.5, ylim=c(0.1,1000000), ylab='log10( Number of roads + 1 )', xlab=expression(italic('f'['r'])))
+    axis(1, at=seq(from=0,by=1,length.out=length(ah$breaks)), labels=as.character(ah$breaks), las=1, cex.axis=1.5)
+    box(bty = "o")
+    # rect(xleft=-1, ybottom=0.055, xright=6500, ytop=100000)
+}
+
+# plot hist of used_times of ALL ways
 hist.ways.used_times <- function(df.ways.attrs) {
     a <- df.ways.attrs[['used_times']]
     ah <- hist(a[a>300], breaks=25, plot=F)
@@ -252,6 +264,7 @@ if(F) {
 
 
 if(F) {
+    source('paths_ways_statistics.r')
     source('read_ways.r')
     ways.used_interval <- read.ways.used_interval()
 
@@ -263,6 +276,11 @@ if(F) {
     
     postscript("../../../paper/way2.eps")
     plot.way.used_interval(1872, c(0,800))
+    dev.off()
+
+    df.ways.attrs <- read.ways.attrs(c('id','used_times','used_interval','km','kmh'))
+    postscript("../../../paper/hist-log-rough-fm.eps")
+    hist.log.rough.ways.used_times(df.ways.attrs)
     dev.off()
 }
 

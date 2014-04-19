@@ -93,21 +93,26 @@ read.sample.attr <- function(filename='sample_maxd.txt') {
     return(df)
 }
 
+hist.sample.len <- function(df) {
+
+}
+
 hist.sample.avgd <- function(df) {
-    legends <- c('Sample interval = 2', 'Sample interval = 4', 'Sample interval = 6', 'Sample interval = 8')
+    legends <- c('benchmark','down-sampling-rate = 2', 'down-sampling-rate = 4', 'down-sampling-rate = 6', 'down-sampling-rate = 8')
     ma <- NULL
+    breaks <- seq(from=0.0, to=2.2, by=0.2)
     for(i in seq(2, ncol(df))) {
-        h <- hist(df[,i], breaks=seq(from=0.0, to=2.1, by=0.3), plot=F)
+        h <- hist(df[,i], breaks=breaks, plot=F)
         if(is.null(ma)) {
             ma <- h$counts
         }else {
             ma <- rbind(ma, h$counts)
         }
     }
-    cols <- c('chartreuse4','blue','darkorchid','red')
-    barplot(ma, beside=F, xlim=c(0,8.6), ylim=c(0,35), col=cols, xlab='Max Interval [km]', ylab='Number of Trajectories', cex.lab=1.5, cex.axis=1.5) 
+    cols <- c('grey','chartreuse4','blue','darkorchid','red')
+    barplot(ma, beside=F, xlim=c(0,13.3), ylim=c(0,35), col=cols, xlab='Sample Interval [km]', ylab='Number of Trajectories', cex.lab=1.5, cex.axis=1.5) 
     legend('topright', legend=legends, fill=cols, border=F, bty="n", cex=1.5)
-    axis(1, at=seq(from=0.1,by=1.2,length.out=8), labels=c('0','0.3','0.6','0.9','1.2','1.5','1.8','2.1'), las=1, cex.axis=1.5)
+    axis(1, at=seq(from=0.1,by=1.2,length.out=12), labels=as.character(breaks), las=1, cex.axis=1.5)
     box(bty = "o")
 }
 
@@ -228,12 +233,21 @@ plot.column <- function(df, col, yrange) {
     xrange <- c(1.8,8.2)
     # x11()
     require(Hmisc)
-    plot(xrange, yrange, xaxt="n", type="n", xlab="Sampling interval", ylab = capitalize(paste(col,"ratio")), cex.lab=1.5, cex.axis=1.5) 
+    if(col == "matched") {
+        ylab <- "Correct Length Propotion"
+    }
+    if(col == "missed") {
+        ylab <- "Missed Length Propotion"
+    }
+    if(col == "false") {
+        ylab <- "False Length Propotion"
+    }
+    plot(xrange, yrange, xaxt="n", type="n", xlab="Down-Sampling-rate", ylab = ylab, cex.lab=1.5, cex.axis=1.5) 
     linetype <- c(6,2,1,4) 
     plotchar <- c(0, 1, 2, 15)
     cols <- c('chartreuse4','blue','darkorchid','red')
     text <- c('bn','st','iv','uti')
-    legends <- c('Shortest path','ST-Matching','IVVM','FM-Matching')
+    legends <- c('HMM','ST-Matching','IVVM','SF-Matching')
     for(i in 1:4) {
         s = df[df$method == text[i], 'matched'] + df[df$method == text[i], 'missed']
         lines(c(2,4,6,8), df[df$method == text[i], col]/s, type="b", lwd=2, col=cols[i], lty=linetype[i], pch=plotchar[i], xaxt='n', ann=F)
@@ -256,7 +270,7 @@ plot.column.maxd <- function(df, col, yrange) {
     plotchar <- c(0, 1, 2, 15)
     cols <- c('chartreuse4','blue','darkorchid','red')
     text <- c('bn','st','iv','uti')
-    legends <- c('Shortest path','ST-Matching','IVVM','FM-Matching')
+    legends <- c('HMM','ST-Matching','IVVM','SF-Matching')
     for(i in 1:4) {
         s = df[df$method == text[i], 'matched'][2:12] + df[df$method == text[i], 'missed'][2:12] + 1
         lines(seq(from=0.75, by=0.5, length.out=11), df[df$method == text[i], col][2:12]/s, type="b", lwd=2, col=cols[i], lty=linetype[i], pch=plotchar[i], xaxt='n', ann=F)
@@ -325,5 +339,8 @@ if(F) {
     hist.sample.avgd(df)
     dev.off()
 
-
+    postscript("../../../paper/hist-sample-len.eps")
+    df <- read.sample.attr(filename <- 'sample_len.txt') 
+    hist.sample.len(df)
+    dev.off()
 }

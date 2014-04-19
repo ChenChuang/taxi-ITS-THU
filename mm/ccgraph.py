@@ -193,6 +193,25 @@ class GraphWrapper(object):
                 projs.append(proj)
 
         return tuple(projs)
+    
+    def find_wsds_within(self, lonlat, radius):
+        latgap = km2latgap(radius)
+        longap = km2longap(radius, lonlat[1])
+        
+        es = self.find_edges_intersect(
+                minlon = lonlat[0] - longap,
+                minlat = lonlat[1] - latgap,
+                maxlon = lonlat[0] + longap,
+                maxlat = lonlat[1] + latgap)
+        
+        wsds = []
+        for e in es:
+            proj = self.proj_p2edge(lonlat, e)
+            if proj['d_proj'] < radius:
+                wsds.append((self.G[e[0]][e[1]]['wid'], proj['d_proj']))
+
+        return wsds
+
 
     def find_projs_nearest(self, lonlat, maxr):
         r = min(maxr, 0.05)

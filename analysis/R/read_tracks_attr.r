@@ -11,7 +11,7 @@ read.tracks.attr <- function() {
     return(df)
 }
 
-if(F):
+if(T) {
     tracks.attr <- read.tracks.attr()
 
     length.valid <- tracks.attr[tracks.attr$length < 80,]

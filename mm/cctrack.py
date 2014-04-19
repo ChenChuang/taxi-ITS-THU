@@ -62,6 +62,7 @@ class Track(object):
         for i in range(1,len(self.rds)):
             cur_lonlat = self.rds[i]['gps_lonlat']
             d = cg.lonlats2km(pre_lonlat, cur_lonlat)
+            print d
             if d > max_d:
                 max_d = d
             pre_lonlat = cur_lonlat

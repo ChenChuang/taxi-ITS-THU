@@ -15,15 +15,18 @@ import alg_uti as auti
 
 algs = {'bn':abn, 'st':ast, 'iv':aiv, 'uti':auti}
 ## algs = {'uti':auti}
-intervals = [2,4,6,8]
+# intervals = [2,4,6,8]
+intervals = [10,12,14,16]
 
 track_tbname = "taxi_tracks_gt_1"
 path_tbname = "taxi_paths_gt_1"
-result_fname = "sample_gt_1.txt"
 
-tids = []
+# result_fname = "sample_gt_1.txt"
+result_fname = "sample_compare_result_1.txt"
+
+## tids = []
 ## tids = [84]
-## tids = [28,69,96,97,451,464,476,477,479,481,483,501,505,548,550,658,662,691,724,727,735,768,891,940]
+tids = [28,69,96,97,451,464,476,477,479,481,483,501,505,548,550,658,662,691,724,727,735,768,891,940]
 ## tids = [28,69,96,97,464,476,477,479,483,505,548,550,662,691,724,727,735,768]
 
 def mm(gw, trd, method, tid, interval):
@@ -53,10 +56,10 @@ false_length   = {}
 
 def compare():
     gw = cg.new_gw()
-    trd = cdb.new_track_reader(tbname = track_tbname, offset = 0)
-    # trd = cdb.new_track_reader(offset = 0)
-    prd = cdb.new_path_reader(gw = gw, tbname = path_tbname)
-    # prd = cdb.new_path_reader(gw=gw, tbname="taxi_paths_truth")
+    # trd = cdb.new_track_reader(tbname = track_tbname, offset = 0)
+    trd = cdb.new_track_reader(offset = 0)
+    # prd = cdb.new_path_reader(gw = gw, tbname = path_tbname)
+    prd = cdb.new_path_reader(gw=gw, tbname="taxi_paths_truth")
 
 
     global tids

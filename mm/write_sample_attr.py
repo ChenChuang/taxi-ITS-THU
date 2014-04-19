@@ -2,10 +2,12 @@ import sys
 import cctrack as ct
 import ccdb as cdb
 
-intervals = [2,4,6,8]
+intervals = [1,2,4,6,8]
+# intervals = [1]
 
 # result_fname = "sample_maxd.txt"
 result_fname = "sample_avgd.txt"
+# result_fname = "sample_len.txt"
 
 tids = [28,69,96,97,451,464,476,477,479,481,483,501,505,548,550,658,662,691,724,727,735,768,891,940]
 
@@ -20,9 +22,12 @@ def main():
             xs = [str(tid)]
             for interval in intervals:
                 track = trd.fetch_by_id(tid)
-                track.sample(interval)
+                track.rds = track.aggre_records()
+                if interval > 1:
+                    track.sample(interval)
                 # xs.append(str(track.max_d()))
                 xs.append(str(track.length()/len(track.rds)))
+                # xs.append(str(track.length()))
             f.write(','.join(xs))
             f.write('\n')
 
