@@ -4,6 +4,7 @@ import scipy.sparse.linalg as spyalg
 import scipy.io
 import psycopg2 as pg
 import psycopg2.extras as pgextras
+import pprocess as pp
 
 import datetime
 import random
@@ -70,7 +71,10 @@ def create_var_from_db():
     global nv
     nv = len(var)
     global varloc
-    varloc = range(-1, nr)
+    # varloc = range(-1, nr)
+    varloc = npy.zeros(nr)
+    for i, wid in var:
+        varloc[wid] = i
 
 def fare(length):
     return length
@@ -78,13 +82,13 @@ def fare(length):
 def weight(d):
     return 1
 
-def isvar(wid):
-    return 1 <= wid <= nv
-    # return wid in var
+def create_Ab_from_db(fri=None, toi=None, parallel=False):
+    def isvar(wid):
+        return 1 <= wid <= nv
+        # return wid in var
 
-def create_Ab_from_db():
     def push_fs(wid, fs):
-        i = wid - 1
+        i = varloc[wid]
         bmat[(i, 0)] = fs[0]
         x0mat[(i, 0)] = fs[0]
         for j, f in enumerate(fs[1:]):
@@ -92,6 +96,15 @@ def create_Ab_from_db():
                 f = f - 1
             if f != 0:
                 amat[(i, j)] = -f
+    
+    if fri is None:
+        fri = 0
+    if toi is None:
+        toi = len(var)
+    if parallel:
+        varloc = varloc[:]
+        var = var[:]
+        nv = nv
 
     start_at = datetime.datetime.now() 
 
@@ -112,7 +125,8 @@ def create_Ab_from_db():
     alpha = 0.5
     beta = 0.5
 
-    for i, wid in enumerate(var):
+    for i, wid in enumerate(var[fri:toi]):
+        i = i + fri
         print i, wid, 
         fs = npy.zeros(nv+1)
         pcount = 0
@@ -135,11 +149,28 @@ def create_Ab_from_db():
     
 
     end_at = datetime.datetime.now()
-    print "start:",start_at
-    print "end:",end_at
-    print "elapsed:",end_at - start_at
+    if not parallel:
+        print "start:",start_at
+        print "end:",end_at
+        print "elapsed:",end_at - start_at
  
     info['nnz'] = amat.nnz
+    return [amat, bmat, x0mat, info]
+
+def create_Ab_from_db_parallel():
+    nproc = 3
+    nv_per = nv / 3
+    ress = pp.Map(limit=nproc, reuse=1)
+    pfunc = ress.manage(pp.MakeReusable(create_Ab_from_db))
+    for i in range(0,nproc):
+        fri = i * nv_per
+        toi = (i+1) * nv_per
+        pfunc([fri, toi, True])
+    ress = ress[:]
+    amat  = sum([res[0] for res in ress])
+    bmat  = sum([res[1] for res in ress])
+    x0mat = sum([res[2] for res in ress])
+    info = None
     return [amat, bmat, x0mat, info]
 
 # Ax = b
