@@ -162,6 +162,9 @@ def create_Ab_from_db_parallel():
     nv_per = nv / 3
     ress = pp.Map(limit=nproc, reuse=1)
     pfunc = ress.manage(pp.MakeReusable(create_Ab_from_db))
+
+    start_at = datetime.datetime.now() 
+    
     for i in range(0,nproc):
         fri = i * nv_per
         toi = (i+1) * nv_per
@@ -170,6 +173,12 @@ def create_Ab_from_db_parallel():
     amat  = sum([res[0] for res in ress])
     bmat  = sum([res[1] for res in ress])
     x0mat = sum([res[2] for res in ress])
+    
+    end_at = datetime.datetime.now()
+    print "start:",start_at
+    print "end:",end_at
+    print "elapsed:",end_at - start_at
+    
     info = None
     return [amat, bmat, x0mat, info]
 
