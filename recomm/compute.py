@@ -28,6 +28,9 @@ def compute():
     start_at = datetime.datetime.now()
 
     x0 = None
+
+    create_var_from_db()
+    
     # [amat, bmat, info] = create_Ab_test()
     # [amat, bmat, x0, info] = create_Ab_from_db()
     [amat, bmat, x0, info] = read_Ab_from_file('testamat.mtx','testbmat.mtx','testbmat.mtx')
@@ -74,16 +77,16 @@ def cond(amat):
 
 def create_var_from_db():
     global var
-    # wwt = WayWriter()
-    # var = wwt.wids_npick_gt(0)
+    wwt = WayWriter()
+    var = wwt.wids_npick_gt(-1)
     # var = range(1, nr+1)
-    var = range(1, 20)
+    # var = range(1, 20)
     global nv
     nv = len(var)
     global varloc
     # varloc = range(-1, nr)
-    varloc = npy.zeros(nr)
-    for i, wid in var:
+    varloc = npy.zeros(nr+1)
+    for i, wid in enumerate(var):
         varloc[wid] = i
 
 def fare(length):
@@ -92,13 +95,13 @@ def fare(length):
 def weight(d):
     return 1
 
-def create_Ab_from_db(fri=None, toi=None, parallel=False):
+def create_Ab_from_db(fri=None, toi=None, core=None):
     def isvar(wid):
-        return 1 <= wid <= nv
+        return 1 <= wid <= tnv
         # return wid in var
 
     def push_fs(wid, fs):
-        i = varloc[wid]
+        i = tvarloc[wid]
         bmat[(i, 0)] = fs[0]
         x0mat[(i, 0)] = fs[0]
         for j, f in enumerate(fs[1:]):
@@ -106,24 +109,29 @@ def create_Ab_from_db(fri=None, toi=None, parallel=False):
                 f = f - 1
             if f != 0:
                 amat[(i, j)] = -f
-    
+   
     if fri is None:
         fri = 0
     if toi is None:
         toi = len(var)
-    if parallel:
-        varloc = varloc[:]
-        var = var[:]
-        nv = nv
+    fri = int(fri)
+    toi = int(toi)
+    if core is not None:
+        print "core:", core, "from index:", fri, "to index:", toi
+        tvarloc = varloc[:]
+        tvar = var[:]
+        tnv = nv
+    else:
+        tvarloc = varloc
+        tvar = var
+        tnv = nv
 
     start_at = datetime.datetime.now() 
 
-    create_var_from_db()
-
-    info = {'nnz':0, 'nall':nv*nv}
-    amat = spysp.lil_matrix((nv, nv))
-    bmat = npy.zeros((nv, 1))
-    x0mat = npy.zeros((nv, 1))
+    info = {'nnz':0, 'nall':tnv*tnv}
+    amat = spysp.lil_matrix((tnv, tnv))
+    bmat = npy.zeros((tnv, 1))
+    x0mat = npy.zeros((tnv, 1))
     prd = PathReader()
     gw = cg.new_gw(
             database='beijing_mm_po', 
@@ -135,41 +143,44 @@ def create_Ab_from_db(fri=None, toi=None, parallel=False):
     alpha = 0.5
     beta = 0.5
 
-    for i, wid in enumerate(var[fri:toi]):
+    for i, wid in enumerate(tvar[fri:toi]):
         i = i + fri
-        print i, wid, 
-        fs = npy.zeros(nv+1)
+        print core, i, wid 
+        fs = npy.zeros(tnv+1)
         pcount = 0
         for (swid, ewid, length, elonlats) in prd.paths_startwith_wid(wid):
             pcount = pcount + 1
             wsds = gw.find_wsds_within(elonlats, radius=2)
             for (near_wid, d) in wsds:
                 if isvar(near_wid):
-                    near_i = varloc[near_wid]
+                    near_i = tvarloc[near_wid]
                     fs[near_i] = fs[near_i] + weight(d)
             fs[0] = fs[0] + fare(length)
-        print "pcount:", pcount, 
+        # print "pcount:", pcount, 
         fs[0] = fs[0] * alpha
         fsum = sum(fs[1:])
         if fsum > 0:
             fs[1:] = fs[1:] / fsum
             fs[1:] = fs[1:] * beta
         push_fs(wid, fs)
-        print "done"
+        # print "done"
     
 
     end_at = datetime.datetime.now()
-    if not parallel:
+    if core is None:
         print "start:",start_at
         print "end:",end_at
         print "elapsed:",end_at - start_at
+        write_mat(amat, 'amat.mtx')
+        write_mat(bmat, 'bmat.mtx')
+        write_mat(x0mat, 'x0mat.mtx')
  
     info['nnz'] = amat.nnz
     return [amat, bmat, x0mat, info]
 
 def create_Ab_from_db_parallel():
     nproc = 3
-    nv_per = nv / 3
+    nv_per = int(nv / 3)
     ress = pp.Map(limit=nproc, reuse=1)
     pfunc = ress.manage(pp.MakeReusable(create_Ab_from_db))
 
@@ -178,7 +189,9 @@ def create_Ab_from_db_parallel():
     for i in range(0,nproc):
         fri = i * nv_per
         toi = (i+1) * nv_per
-        pfunc([fri, toi, True])
+        if i == nproc-1:
+            toi = nv
+        pfunc(fri, toi, i)
     ress = ress[:]
     amat  = sum([res[0] for res in ress])
     bmat  = sum([res[1] for res in ress])
@@ -188,8 +201,11 @@ def create_Ab_from_db_parallel():
     print "start:",start_at
     print "end:",end_at
     print "elapsed:",end_at - start_at
-    
-    info = None
+    write_mat(amat, 'amat.mtx')
+    write_mat(bmat, 'bmat.mtx')
+    write_mat(x0mat, 'x0mat.mtx')
+
+    info = {'nnz': amat.nnz, 'nall':nv*nv}
     return [amat, bmat, x0mat, info]
 
 # Ax = b
@@ -283,23 +299,27 @@ class WayWriter(RemoteDB):
         super(WayWriter, self).__init__(database="beijing_mm_po")
         self.tbname = tbname
 
-    def write_score(self, scores):
-        for (wid, s) in enumerate(scores):
+    def update_score(self, scores):
+        for (i, s) in enumerate(scores):
+            wid = var[i]
+            print i, wid
             sql = "update " + self.tbname + " set (score) = (%s) where wid = %s"
             self.cursor.execute(sql, (s, wid))
         self.conn.commit()
 
-    def write_npick(self):
+    def update_npick(self):
         prd = PathReader()
         for wid in xrange(1, nr+1):
+            print wid
             n = prd.npick(wid)
             sql = "update " + self.tbname + " set (pickup_num) = (%s) where wid = %s"
             self.cursor.execute(sql, (n, wid))
         self.conn.commit()
     
-    def write_ndrop(self):
+    def update_ndrop(self):
         prd = PathReader()
         for wid in xrange(1, nr+1):
+            print wid
             n = prd.ndrop(wid)
             sql = "update " + self.tbname + " set (dropoff_num) = (%s) where wid = %s"
             self.cursor.execute(sql, (n, wid))
