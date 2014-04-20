@@ -519,6 +519,8 @@ def proj_p2seg(p_lonlat, s_lonlat, t_lonlat):
     s_xy = lonlat2xykm(s_lonlat)
     t_xy = lonlat2xykm(t_lonlat)
     st_xy = (t_xy[0] - s_xy[0], t_xy[1] - s_xy[1])
+    if st_xy[0] == 0 and st_xy[1] == 0:
+        return 0
     t = ( (p_xy[0] - s_xy[0])*st_xy[0] + (p_xy[1] - s_xy[1])*st_xy[1] ) / (st_xy[0]**2 + st_xy[1]**2)
     return t
 

@@ -20,7 +20,7 @@ nv = nr
 var = None
 varloc = None
 
-maxiter = 1000
+maxiter = 30000
 tol = 1e-5
 
 def compute():
@@ -42,7 +42,7 @@ def compute():
     print info
     
     x = compute_x(amat, bmat, x0)
-
+    
     # wwt = WayWriter()
     # wwt.write_score(x)
 
@@ -62,6 +62,10 @@ def compute_x(amat, bmat, x0, info=None):
     print "start:",start_at
     print "end:",end_at
     print "elapsed:",end_at-start_at
+
+    xmat = npy.matrix(x[0])
+    write_mat(xmat, 'xmat.mtx')
+    
     return x 
 
 class Callback:
@@ -95,13 +99,13 @@ def fare(length):
 def weight(d):
     return 1
 
-def create_Ab_from_db(fri=None, toi=None, core=None):
+def create_Ab_from_db(fri=None, toi=None, core=0, write=True, dirname=''):
     def isvar(wid):
-        return 1 <= wid <= tnv
+        return 1 <= wid <= nv
         # return wid in var
 
     def push_fs(wid, fs):
-        i = tvarloc[wid]
+        i = varloc[wid]
         bmat[(i, 0)] = fs[0]
         x0mat[(i, 0)] = fs[0]
         for j, f in enumerate(fs[1:]):
@@ -114,24 +118,14 @@ def create_Ab_from_db(fri=None, toi=None, core=None):
         fri = 0
     if toi is None:
         toi = len(var)
-    fri = int(fri)
-    toi = int(toi)
-    if core is not None:
-        print "core:", core, "from index:", fri, "to index:", toi
-        tvarloc = varloc[:]
-        tvar = var[:]
-        tnv = nv
-    else:
-        tvarloc = varloc
-        tvar = var
-        tnv = nv
+    print "core:", core, "from index:", fri, "to index:", toi
 
     start_at = datetime.datetime.now() 
 
-    info = {'nnz':0, 'nall':tnv*tnv}
-    amat = spysp.lil_matrix((tnv, tnv))
-    bmat = npy.zeros((tnv, 1))
-    x0mat = npy.zeros((tnv, 1))
+    info = {'nnz':0, 'nall':nv*nv}
+    amat = spysp.lil_matrix((nv, nv))
+    bmat = npy.zeros((nv, 1))
+    x0mat = npy.zeros((nv, 1))
     prd = PathReader()
     gw = cg.new_gw(
             database='beijing_mm_po', 
@@ -143,17 +137,17 @@ def create_Ab_from_db(fri=None, toi=None, core=None):
     alpha = 0.5
     beta = 0.5
 
-    for i, wid in enumerate(tvar[fri:toi]):
+    for i, wid in enumerate(var[fri:toi]):
         i = i + fri
         print core, i, wid 
-        fs = npy.zeros(tnv+1)
+        fs = npy.zeros(nv+1)
         pcount = 0
-        for (swid, ewid, length, elonlats) in prd.paths_startwith_wid(wid):
+        for (swid, ewid, elon, elat, length) in prd.paths_startwith_wid(wid):
             pcount = pcount + 1
-            wsds = gw.find_wsds_within(elonlats, radius=2)
+            wsds = gw.find_wsds_within((elon, elat), radius=2)
             for (near_wid, d) in wsds:
                 if isvar(near_wid):
-                    near_i = tvarloc[near_wid]
+                    near_i = varloc[near_wid]
                     fs[near_i] = fs[near_i] + weight(d)
             fs[0] = fs[0] + fare(length)
         # print "pcount:", pcount, 
@@ -167,45 +161,15 @@ def create_Ab_from_db(fri=None, toi=None, core=None):
     
 
     end_at = datetime.datetime.now()
-    if core is None:
-        print "start:",start_at
-        print "end:",end_at
-        print "elapsed:",end_at - start_at
-        write_mat(amat, 'amat.mtx')
-        write_mat(bmat, 'bmat.mtx')
-        write_mat(x0mat, 'x0mat.mtx')
- 
-    info['nnz'] = amat.nnz
-    return [amat, bmat, x0mat, info]
-
-def create_Ab_from_db_parallel():
-    nproc = 3
-    nv_per = int(nv / 3)
-    ress = pp.Map(limit=nproc, reuse=1)
-    pfunc = ress.manage(pp.MakeReusable(create_Ab_from_db))
-
-    start_at = datetime.datetime.now() 
-    
-    for i in range(0,nproc):
-        fri = i * nv_per
-        toi = (i+1) * nv_per
-        if i == nproc-1:
-            toi = nv
-        pfunc(fri, toi, i)
-    ress = ress[:]
-    amat  = sum([res[0] for res in ress])
-    bmat  = sum([res[1] for res in ress])
-    x0mat = sum([res[2] for res in ress])
-    
-    end_at = datetime.datetime.now()
     print "start:",start_at
     print "end:",end_at
     print "elapsed:",end_at - start_at
-    write_mat(amat, 'amat.mtx')
-    write_mat(bmat, 'bmat.mtx')
-    write_mat(x0mat, 'x0mat.mtx')
-
-    info = {'nnz': amat.nnz, 'nall':nv*nv}
+    if write:
+        write_mat(amat, dirname + 'amat_'+str(core))
+        write_mat(bmat, dirname + 'bmat_'+str(core))
+        write_mat(x0mat, dirname + 'x0mat_'+str(core))
+ 
+    info['nnz'] = amat.nnz
     return [amat, bmat, x0mat, info]
 
 # Ax = b
@@ -250,7 +214,7 @@ class RemoteDB(object):
                     password = self.password,
                     host = self.host,
                     port = self.port)
-            self.cursor = self.conn.cursor(cursor_factory = pgextras.DictCursor)
+            self.cursor = self.conn.cursor()
             return True
         except pg.DatabaseError, e:
             print e
@@ -269,20 +233,15 @@ class PathReader(RemoteDB):
         self.tbname = tbname
 
     def paths_startwith_wid(self, wid):
-        sql = "select id as pid, tid, \
-            tid_s_lon as slon, \
-            tid_s_lat as slat, \
-            tid_s_wid as swid, \
-            tid_e_lon as elon, \
-            tid_e_lat as elat, \
-            tid_e_wid as ewid, tid_length as l, day from " + self.tbname + " where tid_s_wid = %s"
+        sql = "select \
+            tid_s_wid, \
+            tid_e_wid, \
+            tid_e_lon, \
+            tid_e_lat, \
+            tid_length from " + self.tbname + " where tid_s_wid = %s"
         self.cursor.execute(sql, (str(wid),))
-        while True:            
-            row = self.cursor.fetchone()
-            if row is None:
-                break
-            elonlats = (row['elon'], row['elat'])
-            yield [row['swid'], row['ewid'], row['l'], elonlats]
+        rows = self.cursor.fetchall()
+        return rows
 
     def npick(self, wid):
         sql = "select count(*) from " + self.tbname + " where tid_s_wid = %s"
@@ -329,7 +288,7 @@ class WayWriter(RemoteDB):
         sql = "select wid from " + self.tbname + " where pickup_num > %s"
         self.cursor.execute(sql, (n,))
         ws = self.cursor.fetchall()
-        return [w['wid'] for w in ws]
+        return [w[0] for w in ws]
     
     def init_road_score(self):
         for wid in xrange(1, nr+1):
@@ -357,8 +316,33 @@ def read_Ab_from_file(amatf, bmatf, x0matf):
     info = {'nnz':amat.nnz, 'nall':nv*nv}
     return [amat, bmat, x0mat, info]
 
+def read_Ab_from_dir(dirname, n):
+    try:
+        amat = read_mat(dirname + '/amat_0.mtx')
+    except:
+        amat = spysp.lil_matrix((nv, nv))
+        for i in range(1, n+1):
+            amat = amat + read_mat(dirname + '/amat_' + str(i) + '.mtx')
+        write_mat(amat, dirname + '/amat_0.mtx')
+    try:
+        bmat = read_mat(dirname + '/bmat_0.mtx')
+    except:
+        bmat = npy.zeros((nv, 1))
+        for i in range(1, n+1):
+            bmat = bmat + read_mat(dirname + '/bmat_' + str(i) + '.mtx')
+        write_mat(bmat, dirname + '/bmat_0.mtx')
+    try: 
+        x0mat = read_mat(dirname + '/x0mat_0.mtx')
+    except:
+        x0mat = npy.zeros((nv, 1))
+        for i in range(1, n+1):
+            x0mat = x0mat + read_mat(dirname + '/x0mat_' + str(i) + '.mtx')
+        write_mat(x0mat, dirname + '/x0mat_0.mtx')
+    info = {'nnz':amat.nnz, 'nall':nv*nv}
+    return [amat, bmat, x0mat, info]
 
-def Aslow():
+
+def A_slow():
     info = {'nnz':0, 'nall':nv*nv}
     amat = spysp.lil_matrix((nv, nv))
     for i in xrange(0,nv):
