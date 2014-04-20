@@ -20,16 +20,24 @@ nv = nr
 var = None
 varloc = None
 
-maxiter = 10
+maxiter = 1000
 tol = 1e-5
 
 def compute():
-    x0 = None
-    [amat, bmat, info] = create_Ab_test()
-    # [amat, bmat, x0, info] = create_Ab_from_db()
-    # [amat, bmat, x0, info] = read_Ab_from_file('A.mtx','b.mtx','x0.mtx')
+    print "start to load A,b,x0"
+    start_at = datetime.datetime.now()
 
+    x0 = None
+    # [amat, bmat, info] = create_Ab_test()
+    # [amat, bmat, x0, info] = create_Ab_from_db()
+    [amat, bmat, x0, info] = read_Ab_from_file('testamat.mtx','testbmat.mtx','testbmat.mtx')
+
+    end_at = datetime.datetime.now()
+    print "start:",start_at
+    print "end:",end_at
+    print "elapsed:",end_at-start_at
     print info
+    
     x = compute_x(amat, bmat, x0)
 
     # wwt = WayWriter()
@@ -38,6 +46,7 @@ def compute():
 def compute_x(amat, bmat, x0, info=None):
     callback = Callback()
     
+    print "start to compute x"
     start_at = datetime.datetime.now()
     
     x = spyalg.gmres(amat, bmat, x0=x0, restart=None, xtype=None, M=None, restrt=None, 
@@ -316,13 +325,17 @@ def write_mat(amat, filename):
 def read_mat(filename):
     if not filename.endswith('.mtx'):
         filename = filename + '.mtx'
-    return scipy.io.mmread(filename).tolil()
+    mat = scipy.io.mmread(filename)
+    if spysp.isspmatrix(mat):
+        mat = mat.tolil()
+    return mat
 
-def read_Ab_from_file(amatf, bmatf):
+def read_Ab_from_file(amatf, bmatf, x0matf):
     amat = read_mat(amatf)
     bmat = read_mat(bmatf)
+    x0mat = read_mat(x0matf)
     info = {'nnz':amat.nnz, 'nall':nv*nv}
-    return [amat, bmat, info]
+    return [amat, bmat, x0mat, info]
 
 
 def Aslow():
