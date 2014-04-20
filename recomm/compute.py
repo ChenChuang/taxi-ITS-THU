@@ -25,14 +25,15 @@ tol = 1e-5
 
 def compute():
     x0 = None
-    # [amat, bmat, info] = create_Ab_test()
-    [amat, bmat, x0, info] = create_Ab_from_db()
+    [amat, bmat, info] = create_Ab_test()
+    # [amat, bmat, x0, info] = create_Ab_from_db()
     # [amat, bmat, x0, info] = read_Ab_from_file('A.mtx','b.mtx','x0.mtx')
 
+    print info
     x = compute_x(amat, bmat, x0)
 
-    wwt = WayWriter()
-    wwt.write_score(x)
+    # wwt = WayWriter()
+    # wwt.write_score(x)
 
 def compute_x(amat, bmat, x0, info=None):
     callback = Callback()
@@ -324,24 +325,66 @@ def read_Ab_from_file(amatf, bmatf):
     return [amat, bmat, info]
 
 
-def A():
+def Aslow():
     info = {'nnz':0, 'nall':nv*nv}
     amat = spysp.lil_matrix((nv, nv))
-    for i in npy.ndindex((nv,nv)):
-        c = random.random()
-        if c < 2:
-            amat[i] = c*100
+    for i in xrange(0,nv):
+        s = 0
+        for j in xrange(0,nv):
+            c = random.random()
+            if c < 0.01:
+                amat[i,j] = c*100
+                s = s + amat[i,j]
+        for j in xrange(0,nv):
+            if amat[i,j] > 0:
+                amat[i,j] = amat[i,j] / s / 2
+        print i
     print "A done"
     info['nnz'] = amat.nnz
     return [amat, info]
+
+def A():
+    info = {'nnz':0, 'nall':nv*nv}
+    amat = spysp.lil_matrix((nv, nv))
+    rnv = 4000
+    js = npy.zeros(rnv)
+    pi = 0
+    for i in xrange(0, rnv):
+        c = random.random()
+        i = int(c*nv)
+        if i >= nv:
+            i = nv-1
+        s = 0
+        for k in xrange(0, rnv):
+            c = random.random()
+            j = int(c*nv)
+            if j >= nv:
+                j = nv-1
+            js[k] = j
+            c = random.random()
+            amat[i,j] = c*100
+            s = s + amat[i,j]
+        for j in js:
+            amat[i,j] = amat[i,j] / s / 2
+        pi = pi + 1
+        print pi
+    print "A done"
+    info['nnz'] = amat.nnz
+    return [amat, info]
+
 
 def b():
     print "b done"
     return npy.ones((nv, 1))
 
 def create_Ab_test():
+    global nv
+    nv = 40000
     [amat, info] = A()
-    return [amat, b(), info]
+    bmat = b()
+    write_mat(amat, 'testamat.mtx')
+    write_mat(bmat, 'testbmat.mtx')
+    return [amat, bmat, info]
 
 def print_mat(m, ur, dr, lc, rc):
     for i in xrange(ur, dr):
