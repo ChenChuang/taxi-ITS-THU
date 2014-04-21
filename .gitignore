@@ -89,6 +89,8 @@ donghao/
 base/.svn/
 
 *.mtx
+*.log
+*.txt
 
 =======
 >>>>>>> cb0fc2956b2243255831c71b7672adf3412790ab

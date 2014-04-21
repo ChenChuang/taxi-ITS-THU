@@ -211,6 +211,43 @@ class GraphWrapper(object):
 
         return wsds
 
+    def find_wsds_within_rough(self, lonlat, radius):
+        latgap = km2latgap(radius)
+        longap = km2longap(radius, lonlat[1])
+        
+        es = self.find_edges_intersect(
+                minlon = lonlat[0] - longap,
+                minlat = lonlat[1] - latgap,
+                maxlon = lonlat[0] + longap,
+                maxlat = lonlat[1] + latgap)
+        
+        wsds = []
+        for e in es:
+            d = min(lonlats2km(lonlat, self.nodes_pos[e[0]]), 
+                    lonlats2km(lonlat, self.nodes_pos[e[1]]))
+            if d < radius:
+                wsds.append((self.G[e[0]][e[1]]['wid'], d))
+
+        return wsds
+
+    def find_wsds_within_rough(self, lonlat, radius):
+        latgap = km2latgap(radius)
+        longap = km2longap(radius, lonlat[1])
+        
+        es = self.find_edges_intersect(
+                minlon = lonlat[0] - longap,
+                minlat = lonlat[1] - latgap,
+                maxlon = lonlat[0] + longap,
+                maxlat = lonlat[1] + latgap)
+        
+        wsds = []
+        for e in es:
+            d = min(lonlats2km(lonlat, self.nodes_pos[e[0]]), 
+                    lonlats2km(lonlat, self.nodes_pos[e[1]]))
+            if d < radius:
+                wsds.append((self.G[e[0]][e[1]]['wid'], d))
+
+        return wsds
 
     def find_projs_nearest(self, lonlat, maxr):
         r = min(maxr, 0.05)

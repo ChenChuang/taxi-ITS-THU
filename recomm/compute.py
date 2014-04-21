@@ -23,56 +23,75 @@ varloc = None
 maxiter = 30000
 tol = 1e-5
 
-def compute():
+def compute(dirname='', cores=3):
     print "start to load A,b,x0"
     start_at = datetime.datetime.now()
 
-    x0 = None
+    x0mat = None
 
     create_var_from_db()
     
     # [amat, bmat, info] = create_Ab_test()
-    # [amat, bmat, x0, info] = create_Ab_from_db()
-    [amat, bmat, x0, info] = read_Ab_from_file('testamat.mtx','testbmat.mtx','testbmat.mtx')
+    # [amat, bmat, x0mat, info] = create_Ab_from_db()
+    # [amat, bmat, x0mat, info] = read_Ab_from_file('testamat.mtx','testbmat.mtx','testbmat.mtx')
+    [amat, bmat, x0mat, info] = read_Ab_from_dir(dirname, cores)
 
     end_at = datetime.datetime.now()
     print "start:",start_at
     print "end:",end_at
     print "elapsed:",end_at-start_at
     print info
+    print ""
     
-    x = compute_x(amat, bmat, x0)
-    
-    # wwt = WayWriter()
-    # wwt.write_score(x)
+    callback = Callback(dirname + 'res.log')
 
-def compute_x(amat, bmat, x0, info=None):
-    callback = Callback()
+    xmat = compute_x(amat, bmat, x0mat, callback)
+
+    write_mat(xmat, dirname + 'xmat.mtx')
     
+    wwt = WayWriter()
+    wwt.update_score(xmat[:,0])
+    return xmat
+
+def compute_x(amat, bmat, x0, callback):
     print "start to compute x"
     start_at = datetime.datetime.now()
     
-    x = spyalg.gmres(amat, bmat, x0=x0, restart=None, xtype=None, M=None, restrt=None, 
+    print ""
+    x, info = spyalg.gmres(amat, bmat, x0=x0, restart=None, xtype=None, M=None, restrt=None, 
             tol = tol, 
             maxiter = maxiter, 
             callback = callback) 
+    print ""
     
+    callback.finish()
+
     end_at = datetime.datetime.now()
-    print info
     print "start:",start_at
     print "end:",end_at
     print "elapsed:",end_at-start_at
 
-    xmat = npy.matrix(x[0])
-    write_mat(xmat, 'xmat.mtx')
-    
-    return x 
+    xmat = npy.zeros((len(x), 1))
+    xmat[:,0] = x
+ 
+    return xmat 
 
 class Callback:
-    def __init__(self):
+    def __init__(self, logf):
         self.iters = 0
+        self.f = open(logf, 'w')
+    
+    def __del__(self):
+        self.f.close()
+
+    def finish(self):
+        self.f.close()
+        self.f = open(logf, 'w')
+
     def __call__(self, rk):
         print self.iters, rk
+        self.f.write(','.join([str(self.iters), str(rk)]))
+        self.f.write('\n')
         self.iters = self.iters + 1
 
 def cond(amat):
@@ -100,6 +119,13 @@ def weight(d):
     return 1
 
 def create_Ab_from_db(fri=None, toi=None, core=0, write=True, dirname=''):
+    alpha = 0.5
+    beta = 0.5
+    radius = 2
+    args = {'alpha':alpha, 'beta':beta, 'radius':radius}
+    with open(dirname + 'args.txt', 'w') as argsf:
+        argsf.write(str(args))
+    
     def isvar(wid):
         return 1 <= wid <= nv
         # return wid in var
@@ -134,9 +160,6 @@ def create_Ab_from_db(fri=None, toi=None, core=0, write=True, dirname=''):
             host='219.223.168.39',
             port='5432')
 
-    alpha = 0.5
-    beta = 0.5
-
     for i, wid in enumerate(var[fri:toi]):
         i = i + fri
         print core, i, wid 
@@ -144,7 +167,7 @@ def create_Ab_from_db(fri=None, toi=None, core=0, write=True, dirname=''):
         pcount = 0
         for (swid, ewid, elon, elat, length) in prd.paths_startwith_wid(wid):
             pcount = pcount + 1
-            wsds = gw.find_wsds_within((elon, elat), radius=2)
+            wsds = gw.find_wsds_within_rough((elon, elat), radius=radius)
             for (near_wid, d) in wsds:
                 if isvar(near_wid):
                     near_i = varloc[near_wid]
@@ -261,7 +284,7 @@ class WayWriter(RemoteDB):
     def update_score(self, scores):
         for (i, s) in enumerate(scores):
             wid = var[i]
-            print i, wid
+            # print i, wid
             sql = "update " + self.tbname + " set (score) = (%s) where wid = %s"
             self.cursor.execute(sql, (s, wid))
         self.conn.commit()
@@ -285,7 +308,7 @@ class WayWriter(RemoteDB):
         self.conn.commit()
 
     def wids_npick_gt(self, n):
-        sql = "select wid from " + self.tbname + " where pickup_num > %s"
+        sql = "select wid from " + self.tbname + " where pickup_num > %s order by wid"
         self.cursor.execute(sql, (n,))
         ws = self.cursor.fetchall()
         return [w[0] for w in ws]
@@ -317,27 +340,36 @@ def read_Ab_from_file(amatf, bmatf, x0matf):
     return [amat, bmat, x0mat, info]
 
 def read_Ab_from_dir(dirname, n):
+    print "reading A ...",
     try:
-        amat = read_mat(dirname + '/amat_0.mtx')
+        amat = read_mat(dirname + 'amat_0.mtx')
     except:
         amat = spysp.lil_matrix((nv, nv))
         for i in range(1, n+1):
-            amat = amat + read_mat(dirname + '/amat_' + str(i) + '.mtx')
-        write_mat(amat, dirname + '/amat_0.mtx')
+            print i,
+            amat = amat + read_mat(dirname + 'amat_' + str(i) + '.mtx')
+        write_mat(amat, dirname + 'amat_0.mtx')
+    print "done"
+    print "reading B ...",
     try:
-        bmat = read_mat(dirname + '/bmat_0.mtx')
+        bmat = read_mat(dirname + 'bmat_0.mtx')
     except:
         bmat = npy.zeros((nv, 1))
         for i in range(1, n+1):
-            bmat = bmat + read_mat(dirname + '/bmat_' + str(i) + '.mtx')
-        write_mat(bmat, dirname + '/bmat_0.mtx')
+            print i,
+            bmat = bmat + read_mat(dirname + 'bmat_' + str(i) + '.mtx')
+        write_mat(bmat, dirname + 'bmat_0.mtx')
+    print "done"
+    print "reading C ...",
     try: 
-        x0mat = read_mat(dirname + '/x0mat_0.mtx')
+        x0mat = read_mat(dirname + 'x0mat_0.mtx')
     except:
         x0mat = npy.zeros((nv, 1))
         for i in range(1, n+1):
-            x0mat = x0mat + read_mat(dirname + '/x0mat_' + str(i) + '.mtx')
-        write_mat(x0mat, dirname + '/x0mat_0.mtx')
+            print i,
+            x0mat = x0mat + read_mat(dirname + 'x0mat_' + str(i) + '.mtx')
+        write_mat(x0mat, dirname + 'x0mat_0.mtx')
+    print "done"
     info = {'nnz':amat.nnz, 'nall':nv*nv}
     return [amat, bmat, x0mat, info]
 
