@@ -29,7 +29,7 @@ def compute(dirname='', cores=3):
 
     x0mat = None
 
-    create_var_from_db()
+    read_var_from_dir(dirname)
     
     # [amat, bmat, info] = create_Ab_test()
     # [amat, bmat, x0mat, info] = create_Ab_from_db()
@@ -49,8 +49,8 @@ def compute(dirname='', cores=3):
 
     write_mat(xmat, dirname + 'xmat.mtx')
     
-    wwt = WayWriter()
-    wwt.update_score(xmat[:,0])
+    # wwt = WayWriter()
+    # wwt.update_score(xmat[:,0])
     return xmat
 
 def compute_x(amat, bmat, x0, callback):
@@ -79,6 +79,7 @@ def compute_x(amat, bmat, x0, callback):
 class Callback:
     def __init__(self, logf):
         self.iters = 0
+        self.logf = logf
         self.f = open(logf, 'w')
     
     def __del__(self):
@@ -86,7 +87,7 @@ class Callback:
 
     def finish(self):
         self.f.close()
-        self.f = open(logf, 'w')
+        self.f = open(self.logf, 'w')
 
     def __call__(self, rk):
         print self.iters, rk
@@ -98,19 +99,40 @@ def cond(amat):
     x = spysp.linalg.lsmr(amat, npy.ones((nv, 1)), damp=0.0, maxiter=None, show=True)
     return x
 
-def create_var_from_db():
+def create_var_from_db(dirname=''):
+    lnpick = 20
+
     global var
     wwt = WayWriter()
-    var = wwt.wids_npick_gt(-1)
+    var = wwt.wids_npick_gt(lnpick-1)
     # var = range(1, nr+1)
     # var = range(1, 20)
     global nv
     nv = len(var)
     global varloc
     # varloc = range(-1, nr)
-    varloc = npy.zeros(nr+1)
+    varloc = -npy.ones(nr+1)
     for i, wid in enumerate(var):
         varloc[wid] = i
+    
+    varmat = npy.zeros((nv, 1))
+    varmat[:,0] = var
+    write_mat(varmat, dirname + 'var.mtx')
+    
+    with open(dirname + 'args.txt', 'a') as argsf:
+        argsf.write('npick >= '  + str(lnpick)  + '\n')
+
+def read_var_from_dir(dirname=''):
+    varmat = read_mat(dirname + 'var.mtx')
+    global var
+    var = list(varmat[:,0])
+    global nv
+    nv = len(var)
+    global varloc
+    varloc = -npy.ones(nr+1)
+    for i, wid in enumerate(var):
+        varloc[wid] = i
+
 
 def fare(length):
     return length
@@ -122,13 +144,15 @@ def create_Ab_from_db(fri=None, toi=None, core=0, write=True, dirname=''):
     alpha = 0.5
     beta = 0.5
     radius = 2
-    args = {'alpha':alpha, 'beta':beta, 'radius':radius}
-    with open(dirname + 'args.txt', 'w') as argsf:
-        argsf.write(str(args))
+    with open(dirname + 'args.txt', 'a') as argsf:
+        argsf.write('alpha = '  + str(alpha)  + '\n')
+        argsf.write('beta = '   + str(beta)   + '\n')
+        argsf.write('radius = ' + str(radius) + '\n')
     
     def isvar(wid):
-        return 1 <= wid <= nv
+        # return 1 <= wid <= nv
         # return wid in var
+        return varloc[wid] >= 0
 
     def push_fs(wid, fs):
         i = varloc[wid]
@@ -144,6 +168,7 @@ def create_Ab_from_db(fri=None, toi=None, core=0, write=True, dirname=''):
         fri = 0
     if toi is None:
         toi = len(var)
+    toi = min(len(var), toi)
     print "core:", core, "from index:", fri, "to index:", toi
 
     start_at = datetime.datetime.now() 
