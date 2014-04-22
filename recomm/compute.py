@@ -8,11 +8,13 @@ import pprocess as pp
 
 import datetime
 import random
+import math
 
 import sys, os
 mmpath = os.path.join(os.getcwd(), '..', 'mm')
 sys.path.insert(0, mmpath)
 import ccgraph as cg
+from ccdb import DB
 del sys.path[0]
 
 nr = 49122
@@ -133,21 +135,37 @@ def read_var_from_dir(dirname=''):
     for i, wid in enumerate(var):
         varloc[wid] = i
 
-
-def fare(length):
+def fare_length(length):
     return length
 
-def weight(d):
-    return 1
+def fare_rmb(length):
+    if length < 3.0:
+        return 10.0 + 3.0
+    if length < 15.0:
+        return 10.0 + (length - 10.0) * 2.0 + 3.0
+    else:
+        return 20.0 + (length - 15.0) * 3.0 + 3.0
+
+def make_unif(scale):
+    return lambda x: scale
+
+def make_norm(mean, stderr):
+    return lambda x: 1 / ( stderr * (math.pi*2)**0.5 ) * math.exp( (x - mean)**2 / (-2.0 * stderr**2) )
 
 def create_Ab_from_db(fri=None, toi=None, core=0, write=True, dirname=''):
     alpha = 0.5
     beta = 0.5
     radius = 2
+    fare = fare_length
+    weight = make_unif(1.0)
+    # weight = make_norm(0, 1)
+
     with open(dirname + 'args.txt', 'a') as argsf:
         argsf.write('alpha = '  + str(alpha)  + '\n')
         argsf.write('beta = '   + str(beta)   + '\n')
         argsf.write('radius = ' + str(radius) + '\n')
+        argsf.write('fare = ' + 'length' + '\n')
+        argsf.write('weight = ' + 'unif' + '\n')
     
     def isvar(wid):
         # return 1 <= wid <= nv
@@ -300,6 +318,66 @@ class PathReader(RemoteDB):
         sql = "select count(*) from " + self.tbname + " where tid_e_wid = %s"
         self.cursor.execute(sql, (str(wid),))
         return int(self.cursor.fetchone()[0])
+
+class PathTransfer(DB):
+    def __init__(self, swid):
+        super(PathTransfer, self).__init__(database='tempdb')
+        self.tbname = "paths_startwith_" + str(swid)
+        self.swid = swid
+
+    def create_tb(self):
+        sql = "create table " + self.tbname + "( \
+                swid int not null, \
+                ewid int not null, \
+                s_geom geometry not null, \
+                e_geom geometry not null, \
+                path_geom geometry not null);"
+        try:
+            self.cursor.execute(sql)
+            self.conn.commit()
+            print "table", self.tbname,"created"
+        except Exception, e:
+            print e
+            self.conn.rollback()
+
+    def transfer(self):
+        rdb = RemoteDB()
+        for i in xrange(1, 21):
+            print i,
+            day = str(i)
+            if i < 10:
+                day = "0" + day
+            day = "201211" + day
+            sql = "select tid_s_wid, tid_s_lon, tid_s_lat, tid_e_wid, tid_e_lon, tid_e_lat, st_astext(path_geom) as geom from taxi_paths_occupied_crusing_st_" + day + \
+                " as paths, track_information_201211 as info where paths.tid = info.tid and info.day = '" + day + "'" + \
+                " and info.tid_s_wid = " + str(self.swid) + ";"
+            try:
+                rdb.cursor.execute(sql)
+                rows = rdb.cursor.fetchall()
+            except:
+                continue
+            try:
+                for row in rows:
+                    sql = "insert into " + self.tbname + "(swid, ewid, s_geom, e_geom, path_geom) values (%s,%s,%s,%s,%s)"
+                    args = (row[0], row[3], ('POINT(%f %f)' % (row[1], row[2])), ('POINT(%f %f)' % (row[4], row[5])), row[6])
+                    self.cursor.execute(sql, args)
+                self.conn.commit()
+            except Exception, e:
+                print e
+                self.conn.rollback()
+                continue
+        print "transfer done"
+
+def transfer_startwith(wid):
+    pt = com.PathTransfer(wid)
+    pt.create_tb()
+    pt.transfer()
+
+def update_score_from_dir(dirname=''):
+    xmat = read_mat(dirname + 'xmat.mtx')
+    wwt = WayWriter()
+    wwt.update_score(xmat[:,0])
+
 
 class WayWriter(RemoteDB):
     def __init__(self, tbname = "road_score"):
