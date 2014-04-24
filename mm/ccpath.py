@@ -73,7 +73,7 @@ class Path(object):
             self.get_es_from_ways()
 
         if len(self.es) == 0:
-            l = 0
+            return 0
         if len(self.es) == 1:            
             l = self.gw.proj_p2edge(orig_lonlat, self.es[0])['l_t'] - self.gw.proj_p2edge(dest_lonlat, self.es[0])['l_t']
         else:
@@ -87,7 +87,7 @@ class Path(object):
             self.get_es_from_ways()
 
         if len(self.es) == 0:
-            l = []
+            return []
         if len(self.es) == 1:            
             l = [self.gw.proj_p2edge(orig_lonlat, self.es[0])['l_t'] - self.gw.proj_p2edge(dest_lonlat, self.es[0])['l_t'],]
         else:
@@ -102,7 +102,7 @@ class Path(object):
             self.get_es_from_ways()
 
         if len(self.es) == 0:
-            t = 0
+            return 0
         if len(self.es) == 1:
             e = self.es[0]
             l = self.gw.proj_p2edge(orig_lonlat, e)['l_t'] - self.gw.proj_p2edge(dest_lonlat, e)['l_t']

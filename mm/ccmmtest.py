@@ -32,7 +32,7 @@ def mm(tid, method, interval=1):
 
     path = alg.match(gw, track)
 
-    pt2j.write_p_geojson(path)
+    print pt2j.write_p_geojson(path, interval)
 
     # pwd.insert_update(path)
 

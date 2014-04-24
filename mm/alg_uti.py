@@ -25,6 +25,8 @@ ways_used_interval = None
 best_paths_buffer = dict()
 shortest_t_paths_buffer = dict()
 shortest_l_paths_buffer = dict()
+shortest_t_cv_buffer = dict()
+shortest_l_cv_buffer = dict()
 
 summary = Summary(
         forced_shortest = 0,
@@ -168,8 +170,11 @@ def best_path_from_to(gw, origin, destination, **kwargs):
         added_nodes = added[::]
         added = []
         for v in added_nodes:
-            (pre, childs, s_l, s_u, s_t, s_lu, n_e, n_tr) = visited[v]
-            
+            try:
+                (pre, childs, s_l, s_u, s_t, s_lu, n_e, n_tr) = visited[v]
+            except:
+                continue
+
             for e in gw.G.out_edges(nbunch = v):
                 # assert v == e[0]
                 # visiting cv via e
@@ -246,31 +251,38 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                     continue
 
                 try:
-                    shortest_l_cv = shortest_l_paths_buffer[(cv, destination)]
+                    shortest_l_cv = shortest_l_cv_buffer[(cv, destination)]
                 except KeyError, e:
-                    shortest_l_cv = gw.shortest_path_from_to(cv, destination, 'length')
-                    shortest_l_paths_buffer[(cv, destination)] = shortest_l_cv
-                if cv_s_l + shortest_l_cv > max_l:
+                    tmp_path = gw.shortest_path_from_to(cv, destination, 'length')
+                    if len(tmp_path) == 0:
+                        shortest_l_cv = -1
+                    else:
+                        shortest_l_cv = cp.new_path_from_es(gw, 0, tmp_path).precise_length(gw.nodes_pos[cv], kwargs['dest_lonlat'])
+                    shortest_l_cv_buffer[(cv, destination)] = shortest_l_cv
+                if shortest_l_cv < 0 or cv_s_l + shortest_l_cv > max_l:
                     if cv in debug_cvs:
                         print "l + shortest_l > max"
                     continue
 
                 try:
-                    shortest_t_cv = shortest_t_paths_buffer[(cv, destination)]
+                    shortest_t_cv = shortest_t_cv_buffer[(cv, destination)]
                 except KeyError, e:
-                    shortest_t_cv = gw.shortest_path_from_to(cv, destination, 'time')
-                    shortest_t_paths_buffer[(cv, destination)] = shortest_t_cv
-                if cv_s_t +  shortest_t_cv > max_t:
+                    tmp_path = gw.shortest_path_from_to(cv, destination, 'time')
+                    if len(tmp_path) == 0:
+                        shortest_t_cv = -1
+                    else:
+                        shortest_t_cv = cp.new_path_from_es(gw, 0, tmp_path).precise_time(gw.nodes_pos[cv], kwargs['dest_lonlat'])
+                    shortest_t_cv_buffer[(cv, destination)] = shortest_t_cv
+                if shortest_t_cv < 0 or cv_s_t + shortest_t_cv > max_t:
                     if cv in debug_cvs:
                         print "t + shortest_t > max"
-                    # unreachable
                     continue
                 
                 # if cv is visited, update it if necessary 
                 # else, add cv to added and visited_dict
 
                 is_to_add = False
-
+                
                 if visited.has_key(cv):
                     [cv_pre_b, cv_childs_b, cv_s_l_b, cv_s_u_b, cv_s_t_b, cv_s_lu_b, cv_n_e_b, cv_n_tr_b]  = visited[cv]
 
@@ -312,23 +324,27 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                 
                 if is_to_add:
                     # empty the traverse-tree rooted by cv
-                    tmp_tree = cv_childs_b
-                    while True:
-                        try:
-                            tmp_tree_v = tmp_tree.pop(0)
-                        except IndexError, e:
-                            break
-                        tmp_tree = tmp_tree + visited[tmp_tree_v][1]
-                        del visited[tmp_tree_v]
+                    if visited.has_key(cv):
+                        [cv_pre_b, cv_childs_b, cv_s_l_b, cv_s_u_b, cv_s_t_b, cv_s_lu_b, cv_n_e_b, cv_n_tr_b]  = visited[cv]
+                        tmp_tree = cv_childs_b
+                        while True:
+                            try:
+                                tmp_tree_v = tmp_tree.pop(0)
+                            except IndexError, e:
+                                break
+                            tmp_tree = tmp_tree + visited[tmp_tree_v][1]
+                            del visited[tmp_tree_v]
+                            if tmp_tree_v in added:
+                                added.remove(tmp_tree_v)
+                        # remove cv from previous parent's childs
+                        if cv in visited[cv_pre_b][1]:
+                            visited[cv_pre_b][1].remove(cv)
 
                     # update cv's attributes, its childs set is empty now
                     visited[cv] = [cv_pre, [], cv_s_l, cv_s_u, cv_s_t, cv_s_lu, cv_n_e, cv_n_tr]
                     # add cv to current parent's childs
                     if cv not in visited[cv_pre][1]:
                         visited[cv_pre][1].append(cv)
-                    # remove cv from previous parent's childs
-                    if cv in visited[cv_pre_b][1]:
-                        visited[cv_pre_b][1].remove(cv)
     
                     if cv not in added:
                         added.append(cv)
