@@ -159,7 +159,7 @@ def best_path_from_to(gw, origin, destination, **kwargs):
     visited = {origin:(-1,0,0,0,0,0,0)}
     added = [origin,]
     
-    # visit all nodes like dijkstra, and find the best path
+    # visit all nodes like using BFS, and find the best path
     iscontinue = True
     while iscontinue:
         iscontinue = False
