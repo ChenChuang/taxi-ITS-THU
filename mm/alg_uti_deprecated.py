@@ -148,16 +148,15 @@ def best_path_from_to(gw, origin, destination, **kwargs):
     to_edge = kwargs['to_edge']
 
     # visited = {node_id:(
-    # 0) pre node_id,
-    # 1) children, 
-    # 2) length of prior path, 
-    # 3) sum of used_times, 
-    # 4) sum of time, 
-    # 5) sum of used_times*length of way
-    # 6) num of waysi
-    # 7) num of turns
+    # 0) pre node_id, 
+    # 1) length of prior path, 
+    # 2) sum of used_times, 
+    # 3) sum of time, 
+    # 4) sum of used_times*length of way
+    # 5) num of waysi
+    # 6) num of turns
     # )}
-    visited = {origin:[-1,[],0,0,0,0,0,0]}
+    visited = {origin:(-1,0,0,0,0,0,0)}
     added = [origin,]
     
     # visit all nodes like using BFS, and find the best path
@@ -168,7 +167,7 @@ def best_path_from_to(gw, origin, destination, **kwargs):
         added_nodes = added[::]
         added = []
         for v in added_nodes:
-            (pre, childs, s_l, s_u, s_t, s_lu, n_e, n_tr) = visited[v]
+            (pre, s_l, s_u, s_t, s_lu, n_e, n_tr) = visited[v]
             
             for e in gw.G.out_edges(nbunch = v):
                 # assert v == e[0]
@@ -227,13 +226,13 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                 # check if destination is reachable from cv within max_l
                 cv_pre = v
                 cv_s_l = s_l + e_l
-                cv_s_t = s_t + e_t
 
                 ####################################
                 e_u = e_u * ways_used_interval[e_wid-1][min(awa_intervals_num-1, int(math.floor((cv_s_l + current) / whole)))]
                 ####################################
 
                 cv_s_u = s_u + e_u                
+                cv_s_t = s_t + e_t
                 cv_s_lu = s_lu + e_lu
                 cv_n_e = n_e + 1
                 cv_n_tr = n_tr + e_tr
@@ -244,25 +243,10 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                     if cv in debug_cvs:
                         print "l > max"
                     continue
-
-                try:
-                    shortest_l_cv = shortest_l_paths_buffer[(cv, destination)]
-                except KeyError, e:
-                    shortest_l_cv = gw.shortest_path_from_to(cv, destination, 'length')
-                    shortest_l_paths_buffer[(cv, destination)] = shortest_l_cv
-                if cv_s_l + shortest_l_cv > max_l:
+                d_cv2dest = gw.d_between_nodes(cv, destination)
+                if cv_s_l + d_cv2dest > max_l:
                     if cv in debug_cvs:
-                        print "l + shortest_l > max"
-                    continue
-
-                try:
-                    shortest_t_cv = shortest_t_paths_buffer[(cv, destination)]
-                except KeyError, e:
-                    shortest_t_cv = gw.shortest_path_from_to(cv, destination, 'time')
-                    shortest_t_paths_buffer[(cv, destination)] = shortest_t_cv
-                if cv_s_t +  shortest_t_cv > max_t:
-                    if cv in debug_cvs:
-                        print "t + shortest_t > max"
+                        print "l+d > max"
                     # unreachable
                     continue
                 
@@ -272,11 +256,16 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                 is_to_add = False
 
                 if visited.has_key(cv):
-                    [cv_pre_b, cv_childs_b, cv_s_l_b, cv_s_u_b, cv_s_t_b, cv_s_lu_b, cv_n_e_b, cv_n_tr_b]  = visited[cv]
+                    cv_s_l_before = visited[cv][1]
+                    cv_s_u_before = visited[cv][2]
+                    cv_s_t_before = visited[cv][3]
+                    cv_s_lu_before = visited[cv][4]
+                    cv_n_e_before = visited[cv][5]
+                    cv_n_tr_before = visited[cv][6]
 
                     # find the shared part of path of cv and visited[cv][0], we compare the turns number of the rest.
                     tmp_cv_share_n_tr = 0
-                    if cv_n_tr > 0 and cv_n_tr_b > 0:
+                    if cv_n_tr > 0 and cv_n_tr_before > 0:
                         tmp_cv = cv_pre
                         tmp_cv_path = []
                         while tmp_cv >= 0:
@@ -286,22 +275,22 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                         tmp_cv = visited[cv][0]
                         while tmp_cv >= 0:
                             if tmp_cv in tmp_cv_path:
-                                tmp_cv_share_n_tr = visited[tmp_cv][7]
+                                tmp_cv_share_n_tr = visited[tmp_cv][6]
                                 break
                             tmp_cv = visited[tmp_cv][0]
                     tmp_cv_n_tr = cv_n_tr - tmp_cv_share_n_tr
-                    tmp_cv_n_tr_b = cv_n_tr_b - tmp_cv_share_n_tr
+                    tmp_cv_n_tr_before = cv_n_tr_before - tmp_cv_share_n_tr
 
 
 
                     # if cv_n_e_before > 0 and float(cv_s_u) / cv_n_e > float(cv_s_u_before) / cv_n_e_before:
                     # if cv_s_t < cv_s_t_before:
                     # if cv_s_l < cv_s_l_before:
-                    if tmp_cv_n_tr == 0 and tmp_cv_n_tr_b > 0:
+                    if tmp_cv_n_tr == 0 and tmp_cv_n_tr_before > 0:
                         is_to_add = True
-                    elif tmp_cv_n_tr > 0 and tmp_cv_n_tr_b == 0:
+                    elif tmp_cv_n_tr > 0 and tmp_cv_n_tr_before == 0:
                         is_to_add = False
-                    elif cv_s_lu / (cv_s_l+0.0000001) > cv_s_lu_b / (cv_s_l_b+0.0000001): 
+                    elif cv_s_lu / (cv_s_l+0.0000001) > cv_s_lu_before / (cv_s_l_before+0.0000001): 
                         is_to_add = True
 
                 else:
@@ -311,28 +300,9 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                     iscontinue = True
                 
                 if is_to_add:
-                    # empty the traverse-tree rooted by cv
-                    tmp_tree = cv_childs_b
-                    while True:
-                        try:
-                            tmp_tree_v = tmp_tree.pop(0)
-                        except IndexError, e:
-                            break
-                        tmp_tree = tmp_tree + visited[tmp_tree_v][1]
-                        del visited[tmp_tree_v]
-
-                    # update cv's attributes, its childs set is empty now
-                    visited[cv] = [cv_pre, [], cv_s_l, cv_s_u, cv_s_t, cv_s_lu, cv_n_e, cv_n_tr]
-                    # add cv to current parent's childs
-                    if cv not in visited[cv_pre][1]:
-                        visited[cv_pre][1].append(cv)
-                    # remove cv from previous parent's childs
-                    if cv in visited[cv_pre_b][1]:
-                        visited[cv_pre_b][1].remove(cv)
-    
                     if cv not in added:
                         added.append(cv)
-
+                    visited[cv] = (cv_pre, cv_s_l, cv_s_u, cv_s_t, cv_s_lu, cv_n_e, cv_n_tr)
 
                     if False and cv in debug_cvs:
                         print "add/update",cv
