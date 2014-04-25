@@ -145,8 +145,8 @@ def best_path_from_to(gw, origin, destination, **kwargs):
     summary.best_path_called += 1
 
 
-    max_l = shortest_length * 1.2
-    max_t = shortest_time * 1.2
+    max_l = shortest_length * 1.3
+    max_t = shortest_time * 1.3
 
     # visited = {node_id:(
     # 0) pre node_id,
@@ -301,7 +301,8 @@ def best_path_from_to(gw, origin, destination, **kwargs):
 
                     # find the shared part of path of cv and visited[cv][0], we compare the turns number of the rest.
                     tmp_cv_share_n_tr = 0
-                    if cv_n_tr > 0 and cv_n_tr_b > 0:
+                    tmp_cv_share_s_l = 0
+                    if True or (cv_n_tr > 0 and cv_n_tr_b > 0):
                         tmp_cv = cv_pre
                         tmp_cv_path = []
                         while tmp_cv >= 0:
@@ -312,15 +313,19 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                         while tmp_cv >= 0:
                             if tmp_cv in tmp_cv_path:
                                 tmp_cv_share_n_tr = visited[tmp_cv][7]
+                                tmp_cv_share_s_l = visited[tmp_cv][2]
                                 break
                             tmp_cv = visited[tmp_cv][0]
                     tmp_cv_n_tr = cv_n_tr - tmp_cv_share_n_tr
                     tmp_cv_n_tr_b = cv_n_tr_b - tmp_cv_share_n_tr
+                    tmp_cv_s_l = cv_s_l - tmp_cv_share_s_l
+                    tmp_cv_s_l_b = cv_s_l_b - tmp_cv_share_s_l
 
-                    # if cv_n_e_before > 0 and float(cv_s_u) / cv_n_e > float(cv_s_u_before) / cv_n_e_before:
-                    # if cv_s_t < cv_s_t_before:
-                    # if cv_s_l < cv_s_l_before:
-                    if tmp_cv_n_tr == 0 and tmp_cv_n_tr_b > 0:
+                    if tmp_cv_s_l < 0.05 and tmp_cv_s_l < tmp_cv_s_l_b:
+                        is_to_add = True
+                    elif tmp_cv_s_l_b < 0.05 and tmp_cv_s_l_b < tmp_cv_s_l:
+                        is_to_add = False
+                    elif tmp_cv_n_tr == 0 and tmp_cv_n_tr_b > 0:
                         is_to_add = True
                     elif tmp_cv_n_tr > 0 and tmp_cv_n_tr_b == 0:
                         is_to_add = False
@@ -391,6 +396,8 @@ def match(gw, track):
     best_paths_buffer = dict()
     shortest_t_paths_buffer = dict()
     shortest_l_paths_buffer = dict()
+    shortest_t_cv_buffer = dict()
+    shortest_l_cv_buffer = dict()
 
     shortest_p = track2path(gw, track, shortest_path_from_to, weight = 'length')
     if shortest_p is None:
