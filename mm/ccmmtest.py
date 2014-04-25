@@ -12,6 +12,7 @@ import alg_st as ast
 import alg_iv as aiv
 import alg_ut as aut
 import alg_uti as auti
+# import alg_uti_deprecated as auti
 
 algs = {'bn':abn, 'st':ast, 'iv':aiv, 'ut':aut, 'uti':auti}
 

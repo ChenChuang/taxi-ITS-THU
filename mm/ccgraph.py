@@ -363,7 +363,7 @@ class GraphWrapper(object):
         es = []
         for i in range(0,len(vs)-1):
             es.append( (vs[i], vs[i+1]) )
-        return tuple(es)
+        return es
 
     '''This is a very slow method, it seems correct, but DO NOT use it'''
     def paths_from_to_shorter_than(self, origin, destination, max_length, method='astar'):

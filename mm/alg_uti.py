@@ -90,12 +90,15 @@ def best_path_from_to(gw, origin, destination, **kwargs):
 
     global summary
 
-    #############################################
     current = kwargs['current']
     whole = kwargs['whole']
+    from_edge = kwargs['from_edge']
+    to_edge = kwargs['to_edge']
+    orig_lonlat = kwargs['orig_lonlat']
+    dest_lonlat = kwargs['dest_lonlat']
+    
     if current == INF:
         return []
-    ############################################
 
     # try to retrive the best path between origin and dest is in buffer
     global best_paths_buffer, shortest_t_paths_buffer, shortest_l_paths_buffer
@@ -104,9 +107,6 @@ def best_path_from_to(gw, origin, destination, **kwargs):
         return best_path
     except KeyError, e:
         pass
-
-    # Euclid distance between origin and destination
-    euclid = gw.d_between_nodes(origin, destination)
 
     # compute shortest path between origin and dest
     # Paths whose length not much longer than shortest length will be considered below
@@ -121,18 +121,19 @@ def best_path_from_to(gw, origin, destination, **kwargs):
         shortest_l_path = gw.shortest_path_from_to(origin, destination, 'length')
         shortest_l_paths_buffer[(origin, destination)] = shortest_l_path
     
-    ## shortest = sum([gw.G[e[0]][e[1]]['length'] for e in shortest_path])
-    
     if len(shortest_t_path) == 0:
         return ()
     if len(shortest_l_path) == 0:
         return ()
-    tmp_path = cp.new_path_from_es(gw, 0, shortest_t_path)
-    shortest_time = tmp_path.precise_time(kwargs['orig_lonlat'], kwargs['dest_lonlat'])
+    
+    tmp_path = cp.new_path_from_es(gw, 0, [from_edge] + shortest_t_path + [to_edge])
+    shortest_time = tmp_path.precise_time(orig_lonlat, dest_lonlat)
 
-    tmp_path = cp.new_path_from_es(gw, 0, shortest_l_path)
-    shortest_length = tmp_path.precise_length(kwargs['orig_lonlat'], kwargs['dest_lonlat'])
+    tmp_path = cp.new_path_from_es(gw, 0, [from_edge] + shortest_l_path + [to_edge])
+    shortest_length = tmp_path.precise_length(orig_lonlat, dest_lonlat)
 
+    # Euclid distance between origin and destination
+    euclid = gw.d_between_nodes(origin, destination)
 
     if (abs(shortest_length - euclid) < euclid * 0.01 and len(shortest_t_path) < 3):
         return shortest_t_path
@@ -143,11 +144,9 @@ def best_path_from_to(gw, origin, destination, **kwargs):
 
     summary.best_path_called += 1
 
+
     max_l = shortest_length * 1.2
     max_t = shortest_time * 1.2
-
-    from_edge = kwargs['from_edge']
-    to_edge = kwargs['to_edge']
 
     # visited = {node_id:(
     # 0) pre node_id,
@@ -159,7 +158,14 @@ def best_path_from_to(gw, origin, destination, **kwargs):
     # 6) num of waysi
     # 7) num of turns
     # )}
-    visited = {origin:[-1,[],0,0,0,0,0,0]}
+    
+    orig_wid = gw.G[from_edge[0]][from_edge[1]]['way_id']
+    orig_l = gw.proj_p2edge(orig_lonlat, from_edge)['l_t']
+    orig_u = float(int(ways_used_times[orig_wid-1]))
+    orig_t = orig_l / gw.G[from_edge[0]][from_edge[1]]['speed']
+    orig_lu = orig_l * orig_u
+
+    visited = {origin:[-1, [], orig_l, orig_u, orig_t, orig_lu, 0, 0]}    
     added = [origin,]
     
     # visit all nodes like using BFS, and find the best path
@@ -179,7 +185,6 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                 # assert v == e[0]
                 # visiting cv via e
                 cv = e[1]
-                
                 # attributes of e
                 e_wid = gw.G[e[0]][e[1]]['way_id']
                 e_l = gw.G[e[0]][e[1]]['length']
@@ -236,6 +241,7 @@ def best_path_from_to(gw, origin, destination, **kwargs):
 
                 ####################################
                 e_u = e_u * ways_used_interval[e_wid-1][min(awa_intervals_num-1, int(math.floor((cv_s_l + current) / whole)))]
+                e_lu = e_u * e_l
                 ####################################
 
                 cv_s_u = s_u + e_u                
@@ -244,38 +250,43 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                 cv_n_tr = n_tr + e_tr
 
                 # check if it is possible to reach destination from cv within constrained travel time and length
-                if cv_s_l > max_l or cv_s_t > max_t:
+                if cv_s_l > max_l and cv_s_t > max_t:
                     # unreachable
                     if cv in debug_cvs:
-                        print "l > max"
+                        print cv_s_l, cv_s_t, "cv_s_l and t > max", max_l, max_t
                     continue
 
                 try:
                     shortest_l_cv = shortest_l_cv_buffer[(cv, destination)]
                 except KeyError, e:
                     tmp_path = gw.shortest_path_from_to(cv, destination, 'length')
-                    if len(tmp_path) == 0:
+                    if len(tmp_path) == 0 and cv != destination:
                         shortest_l_cv = -1
                     else:
-                        shortest_l_cv = cp.new_path_from_es(gw, 0, tmp_path).precise_length(gw.nodes_pos[cv], kwargs['dest_lonlat'])
+                        shortest_l_cv = gw.length_of_edges(tmp_path)
                     shortest_l_cv_buffer[(cv, destination)] = shortest_l_cv
-                if shortest_l_cv < 0 or cv_s_l + shortest_l_cv > max_l:
+                if shortest_l_cv < 0:
                     if cv in debug_cvs:
-                        print "l + shortest_l > max"
+                        print "disconnected from dest"
                     continue
 
                 try:
                     shortest_t_cv = shortest_t_cv_buffer[(cv, destination)]
                 except KeyError, e:
                     tmp_path = gw.shortest_path_from_to(cv, destination, 'time')
-                    if len(tmp_path) == 0:
+                    if len(tmp_path) == 0 and cv != destination:
                         shortest_t_cv = -1
                     else:
-                        shortest_t_cv = cp.new_path_from_es(gw, 0, tmp_path).precise_time(gw.nodes_pos[cv], kwargs['dest_lonlat'])
+                        shortest_t_cv = gw.time_of_edges(tmp_path)
                     shortest_t_cv_buffer[(cv, destination)] = shortest_t_cv
-                if shortest_t_cv < 0 or cv_s_t + shortest_t_cv > max_t:
+                if shortest_t_cv < 0:
                     if cv in debug_cvs:
-                        print "t + shortest_t > max"
+                        print "disconnected from dest"
+                    continue
+
+                if cv_s_l + shortest_l_cv > max_l and cv_s_t + shortest_t_cv > max_t:
+                    if cv in debug_cvs:
+                        print "l and t > max"
                     continue
                 
                 # if cv is visited, update it if necessary 
@@ -283,7 +294,9 @@ def best_path_from_to(gw, origin, destination, **kwargs):
 
                 is_to_add = False
                 
-                if visited.has_key(cv):
+                if not visited.has_key(cv):
+                    is_to_add = True
+                else:
                     [cv_pre_b, cv_childs_b, cv_s_l_b, cv_s_u_b, cv_s_t_b, cv_s_lu_b, cv_n_e_b, cv_n_tr_b]  = visited[cv]
 
                     # find the shared part of path of cv and visited[cv][0], we compare the turns number of the rest.
@@ -304,8 +317,6 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                     tmp_cv_n_tr = cv_n_tr - tmp_cv_share_n_tr
                     tmp_cv_n_tr_b = cv_n_tr_b - tmp_cv_share_n_tr
 
-
-
                     # if cv_n_e_before > 0 and float(cv_s_u) / cv_n_e > float(cv_s_u_before) / cv_n_e_before:
                     # if cv_s_t < cv_s_t_before:
                     # if cv_s_l < cv_s_l_before:
@@ -315,14 +326,10 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                         is_to_add = False
                     elif cv_s_lu / (cv_s_l+0.0000001) > cv_s_lu_b / (cv_s_l_b+0.0000001): 
                         is_to_add = True
-
-                else:
-                    is_to_add = True
-
-                    # if any node is reached newly, continue to visit more nodes. otherwise, stop searching
-                    iscontinue = True
                 
                 if is_to_add:
+                    iscontinue = True
+
                     # empty the traverse-tree rooted by cv
                     if visited.has_key(cv):
                         [cv_pre_b, cv_childs_b, cv_s_l_b, cv_s_u_b, cv_s_t_b, cv_s_lu_b, cv_n_e_b, cv_n_tr_b]  = visited[cv]
@@ -349,7 +356,6 @@ def best_path_from_to(gw, origin, destination, **kwargs):
                     if cv not in added:
                         added.append(cv)
 
-
                     if False and cv in debug_cvs:
                         print "add/update",cv
                         print tmp_p
@@ -375,7 +381,7 @@ def best_path_from_to(gw, origin, destination, **kwargs):
         pv = visited[cv][0]
     path.reverse()
     
-    # store path founded in buffer
+    # store path found in buffer
     best_paths_buffer[(origin, destination)] = path
 
     return path

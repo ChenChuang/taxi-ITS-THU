@@ -374,6 +374,7 @@ def transfer_startwith(wid):
     pt.transfer()
 
 def update_score_from_dir(dirname=''):
+    read_var_from_dir(dirname)
     xmat = read_mat(dirname + 'xmat.mtx')
     wwt = WayWriter()
     wwt.update_score(xmat[:,0])
@@ -385,9 +386,12 @@ class WayWriter(RemoteDB):
         self.tbname = tbname
 
     def update_score(self, scores):
+        sql = "update " + self.tbname + " set (score) = (0.0)"
+        self.cursor.execute(sql)
+        self.conn.commit()
         for (i, s) in enumerate(scores):
             wid = var[i]
-            # print i, wid
+            print i, wid
             sql = "update " + self.tbname + " set (score) = (%s) where wid = %s"
             self.cursor.execute(sql, (s, wid))
         self.conn.commit()
