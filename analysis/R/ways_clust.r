@@ -110,7 +110,7 @@ amap.km.sf <- function(mat.sf, centers=5) {
 
 fcm.sf <- function(mat.sf) {
     library(e1071)
-    fit.fcm.sf <- cmeans(mat.sf, centers=4, iter.max=1000, verbose=T, dist='euclidean', method='cmeans')
+    fit.fcm.sf <- cmeans(mat.sf, centers=5, iter.max=1000, verbose=T, dist='euclidean', method='cmeans')
     return(fit.fcm.sf)
 }
 
