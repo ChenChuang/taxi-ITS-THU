@@ -98,7 +98,7 @@ hist.sample.len <- function(df) {
 }
 
 hist.sample.avgd <- function(df) {
-    legends <- c('benchmark','down-sampling-rate = 2', 'down-sampling-rate = 4', 'down-sampling-rate = 6', 'down-sampling-rate = 8')
+    legends <- c('benchmark','subsampling rate = 2', 'subsampling rate = 4', 'subsampling rate = 6', 'subsampling rate = 8')
     ma <- NULL
     breaks <- seq(from=0.0, to=2.2, by=0.2)
     for(i in seq(2, ncol(df))) {
@@ -242,7 +242,7 @@ plot.column <- function(df, col, yrange) {
     if(col == "false") {
         ylab <- "False Length Propotion"
     }
-    plot(xrange, yrange, xaxt="n", type="n", xlab="Down-Sampling-rate", ylab = ylab, cex.lab=1.5, cex.axis=1.5) 
+    plot(xrange, yrange, xaxt="n", type="n", xlab="Subsampling rate", ylab = ylab, cex.lab=1.5, cex.axis=1.5) 
     linetype <- c(6,2,1,4) 
     plotchar <- c(0, 1, 2, 15)
     cols <- c('chartreuse4','blue','darkorchid','red')
@@ -316,16 +316,16 @@ if(F) {
     plot.ranks.var(df)
     dev.off()
 
-    postscript("../../../paper/matched.eps")
+    postscript("../../../paper/matched.eps", width=8, height=8, horizontal = F, paper="special")
     df <- read.precisions()
     plot.matched(df)
     dev.off()
 
-    postscript("../../../paper/missed.eps")
+    postscript("../../../paper/missed.eps", width=8, height=8, horizontal = F, paper="special")
     plot.missed(df)
     dev.off()
 
-    postscript("../../../paper/false.eps")
+    postscript("../../../paper/false.eps", width=8, height=8, horizontal = F, paper="special")
     plot.false(df)
     dev.off()
 
@@ -334,7 +334,7 @@ if(F) {
     hist.max_d(df)
     dev.off()
 
-    postscript("../../../paper/hist-sample-avgd.eps")
+    postscript("../../../paper/hist-sample-avgd.eps", width=8, height=8, horizontal = F, paper="special")
     df <- read.sample.attr(filename <- 'sample_avgd.txt') 
     hist.sample.avgd(df)
     dev.off()
