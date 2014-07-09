@@ -1,11 +1,14 @@
 import math
+import time
 import ccgraph as cg
 from ccdef import *
 
-def new_path_from_es(gw, tid, es):
+def new_path_from_es(gw, tid, es, projs = None):
     if gw is None:
         return None
     p = Path(gw = gw, tid = tid, es = es, ways = None, lonlats = None)
+    if projs is not None:
+        p.get_projs(projs)
     return p
 
 def new_path_from_db(gw, str_tid, str_way_ids, geom):
@@ -96,6 +99,70 @@ class Path(object):
                 l.append(self.gw.G[e[0]][e[1]]['length'])
             l.append(self.gw.proj_p2edge(dest_lonlat, self.es[-1])['l_s'])
         return l
+
+    def get_projs(self, projs, ls=None):
+        if ls is None:
+            ls = self.precise_length_by_wid(projs[0]['gps_lonlat'], projs[-1]['gps_lonlat'])
+        s = 0
+        ts = []
+        i = 0
+        
+        proj = projs[0]
+        ls = proj['l_s']
+        ie = (proj['s'], proj['t'])
+
+        for e in self.es:
+            lt = self.gw.G[e[0]][e[1]]['length']
+            while True:
+                if ie == e:
+                    s = s + proj['l_s'] - ls
+                    ts.append({  \
+                        'l_o' : s, \
+                        'time' : proj['time'], \
+                        'gps_lonlat' : proj['gps_lonlat'], \
+                        'proj_lonlat' : proj['proj_lonlat'], \
+                    })
+                    ls = proj['l_s']
+                    lt = proj['l_t']
+                    i += 1
+                    if i >= len(projs):
+                        self.projs = ts
+                        return ts
+                    proj = projs[i]
+                    ie = (proj['s'], proj['t'])
+                else:
+                    s = s + lt
+                    lt = 0
+                    ls = 0
+                    break
+        self.projs = ts
+        return ts
+
+    def get_time_at(self, lo, sol=None):
+        i = 0
+        while i < len(self.projs) and self.projs[i]['l_o'] < lo:
+            i += 1
+        j = len(self.projs) - 1
+        while j >= 0 and self.projs[j]['l_o'] > lo:
+            j -= 1
+        j = max(0, j)
+        lj = self.projs[j]['l_o']
+        tj = time.mktime(self.projs[j]['time'])
+
+        i = min(len(self.projs)-1, i)
+        li = self.projs[i]['l_o']
+        ti = time.mktime(self.projs[i]['time'])
+       
+        if li == lj:
+            to = tj
+        else:
+            to = tj + (ti - tj) * (lo - lj) / (li - lj)
+        to = time.localtime(to)
+        if sol is None:
+            return to
+        elif sol in ['h', 'hour']:
+            return to.tm_hour
+        
 
     def precise_time(self, orig_lonlat, dest_lonlat):
         if len(self.es) == 0 and self.gw != None:

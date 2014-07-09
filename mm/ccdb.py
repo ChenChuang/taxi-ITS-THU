@@ -210,7 +210,40 @@ class WayAttrDB(DB):
         attrs = [row[0] for row in rows]
         return attrs
 
+    def update_attr_all(self, attrs):
+        for wid in xrange(1, len(attrs[0])+1):
+            if wid%5000 == 0:
+                print wid,
+            sql = "update " + self.tbname + " set (" \
+                + ",".join(["h%02d" % i for i in range(0,24)]) \
+                + ") = (" \
+                + ("%s,"*24)[0:-1] \
+                + ") where wid = %s"
+            params = [attrs[i][wid-1] for i in range(0,24)]
+            params.append(wid)
+            try:
+                self.cursor.execute(sql, tuple(params))
+            except Exception, e:
+                print e
+                return False
+        self.conn.commit()
+        return True
 
+    def create_view_hour(self, drop=False):
+        for h in range(0, 24):
+            print h
+            if drop:
+                sql = "drop view ways_and_attrs_h%02d;" % h
+                self.cursor.execute(sql)
+
+            sql = "create view ways_and_attrs_h%02d \
+            as \
+            select ways.*, ways_freq.h%02d as freq, ways_sf.h%02d as sf, ways_npick.h%02d as npick, ways_ndrop.h%02d as ndrop \
+            from ways, ways_freq, ways_sf, ways_npick, ways_ndrop \
+            where ways.id = ways_freq.wid and ways.id = ways_sf.wid and ways.id = ways_npick.wid and ways.id = ways_ndrop.wid;" % (h,h,h,h,h)
+            self.cursor.execute(sql)
+        self.conn.commit()
+        return True
 
 class PathWriter(DB):
     def __init__(self, tbname):
@@ -343,8 +376,6 @@ class TrackReader(DB):
         self.queried_num = 0
         self.fetched_num = 0
 
-        self.query_more()
-
     def get_all_tids(self):
         sql = "select id from " + self.tbname
         self.cursor.execute(sql) 
@@ -359,6 +390,8 @@ class TrackReader(DB):
         self.queried_num = self.queried_num + self.limit
 
     def fetch_one(self):
+        if self.queried_num == 0:
+            self.query_more()
         row = self.cursor.fetchone()
         if row == None:
             self.query_more()
@@ -368,6 +401,17 @@ class TrackReader(DB):
 
         self.fetched_num = self.fetched_num + 1
         return ct.new_track_from_db(row['id'], row['cuid'], row['geom'], row['track_desc'])
+
+    def tracks_between(self, from_tid, to_tid):
+        print self.tbname
+        sql = "select id, cuid, st_astext(track_geom) as geom, track_desc from " + self.tbname + " where id >= %s and id <= %s order by id"
+        self.cursor.execute(sql, (str(from_tid), str(to_tid)))
+        while True:
+            row = self.cursor.fetchone()
+            if row is not None:
+                yield ct.new_track_from_db(row['id'], row['cuid'], row['geom'], row['track_desc'])
+            else:
+                break
 
     def fetch_by_id(self, tid):
         tconn = None

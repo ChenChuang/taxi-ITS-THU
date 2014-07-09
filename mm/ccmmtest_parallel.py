@@ -1,4 +1,5 @@
 import sys
+import time
 import networkx as nx
 import matplotlib.pyplot as plt
 import ccgraph as cg
@@ -13,9 +14,10 @@ import alg_iv as aiv
 import alg_ut as aut
 import alg_uti as auti
 import alg_ways_attr_time as away
+import alg_bn_parallel as abnp
 # import alg_uti_deprecated as auti
 
-algs = {'bn':abn, 'st':ast, 'iv':aiv, 'ut':aut, 'uti':auti, 'way':away}
+algs = {'bn':abn, 'st':ast, 'iv':aiv, 'ut':aut, 'uti':auti, 'way':away, 'bnp':abnp}
 
 def mm(tid, method, interval=1):
     alg = algs[method]
@@ -39,9 +41,25 @@ def mm(tid, method, interval=1):
     # pwd.insert_update(path)
 
     path.summary()
+    print ""
 
     # del trd,pwd
     del trd
 
     return [track,path]
 
+if __name__ == "__main__":
+    if len(sys.argv) == 2 and sys.argv[1].isdigit():
+        N = int(sys.argv[1])
+        
+        startTime = time.time()
+        
+        for tid in range(1, N+1):
+            mm(tid, 'bnp')
+
+        endTime = time.time()
+        workTime =  endTime - startTime
+        print "The job took " + str(workTime) + " seconds to complete"
+        exit(-1)
+    else:
+        exit(-1)

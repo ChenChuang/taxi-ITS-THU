@@ -15,8 +15,8 @@ import alg_ways_attr_time as alg
 # Second Round
 ICORE = 3
 
-TRACKS_FROM_TID = 2050001
-TRACKS_TO_TID =   2638410
+TRACKS_FROM_TID = 850001
+TRACKS_TO_TID =   1050000
 
 
 gw = cg.new_gw()
@@ -91,5 +91,11 @@ def clear():
     print 'end'
 
 if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        exit(-1)
+    ICORE = int(sys.argv[1])
+    TRACKS_FROM_TID = int(sys.argv[2])
+    TRACKS_TO_TID = int(sys.argv[3])
+
     mm()
 

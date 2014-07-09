@@ -230,24 +230,65 @@ class GraphWrapper(object):
 
         return wsds
 
-    def find_wsds_within_rough(self, lonlat, radius):
+    def find_ws_near_w(self, wid, radius):
+        e = self.st[wid]
+        s_lonlat = self.nodes_pos[e[0]]
+        t_lonlat = self.nodes_pos[e[1]]
+
         latgap = km2latgap(radius)
-        longap = km2longap(radius, lonlat[1])
+        s_longap = km2longap(radius, s_lonlat[1])
+        t_longap = km2longap(radius, t_lonlat[1])
+        longap = min(s_longap, t_longap)
         
         es = self.find_edges_intersect(
-                minlon = lonlat[0] - longap,
-                minlat = lonlat[1] - latgap,
-                maxlon = lonlat[0] + longap,
-                maxlat = lonlat[1] + latgap)
+                minlon = min(s_lonlat[0], t_lonlat[0]) - longap,
+                minlat = min(s_lonlat[1], t_lonlat[1]) - latgap,
+                maxlon = max(s_lonlat[0], t_lonlat[0]) + longap,
+                maxlat = max(s_lonlat[1], t_lonlat[1]) + latgap)
         
-        wsds = []
-        for e in es:
-            d = min(lonlats2km(lonlat, self.nodes_pos[e[0]]), 
-                    lonlats2km(lonlat, self.nodes_pos[e[1]]))
-            if d < radius:
-                wsds.append((self.G[e[0]][e[1]]['wid'], d))
+        ws = []
+        for te in es:
+            if d_e2e(e, te) < radius:
+                ws.append(self.G[e[0]][e[1]]['wid'])
 
-        return wsds
+        return ws
+
+    def find_ws_near_w_fast(self, wid, radius):
+        e = self.st[wid]
+        s_lonlat = self.nodes_pos[e[0]]
+        t_lonlat = self.nodes_pos[e[1]]
+
+        latgap = km2latgap(radius)
+        s_longap = km2longap(radius, s_lonlat[1])
+        t_longap = km2longap(radius, t_lonlat[1])
+        longap = min(s_longap, t_longap)
+        
+        es = self.find_edges_intersect(
+                minlon = min(s_lonlat[0], t_lonlat[0]) - longap,
+                minlat = min(s_lonlat[1], t_lonlat[1]) - latgap,
+                maxlon = max(s_lonlat[0], t_lonlat[0]) + longap,
+                maxlat = max(s_lonlat[1], t_lonlat[1]) + latgap)
+        
+        ws = []
+        for te in es:
+            if te == e:
+                continue
+            tes = [e, te]
+            isok = False
+            for i in [0,1]:
+                ea = tes[i]
+                eb = tes[1-i]
+                for lonlat in self.G[ea[0]][ea[1]]['lonlats']:
+                    d = self.d_p2edge(lonlat, eb)
+                    if d < radius:
+                        isok = True
+                        break
+                if isok:
+                    break
+            if isok:
+                ws.append(self.G[te[0]][te[1]]['wid'])
+
+        return ws
 
     def find_projs_nearest(self, lonlat, maxr):
         r = min(maxr, 0.05)
@@ -261,7 +302,10 @@ class GraphWrapper(object):
                     if proj['d_proj'] < d_min:
                         nproj = proj
                 return nproj
+            if r >= maxr:
+                break
             r = min(maxr, r * 2)
+        return None
 
     def d_p2edge(self, lonlat, edge):
         s = edge[0]
@@ -275,7 +319,19 @@ class GraphWrapper(object):
             if d < d_min:
                 d_min = d
         return d_min
-       
+    
+    def d_e2e(self, e1, e2):
+        d_min = INF
+        es = [e1, e2]
+        for i in [0,1]:
+            ea = es[i]
+            eb = es[1-i]
+            for lonlat in self.G[ea[0]][ea[1]]['lonlats']:
+                d = self.d_p2edge(lonlat, eb)
+                if d < d_min:
+                    d_min = d
+        return d_min
+
     def proj_p2edge(self, p_lonlat, edge):
         s = edge[0]
         t = edge[1]

@@ -68,6 +68,31 @@ class Track(object):
             pre_lonlat = cur_lonlat
         return max_d
 
+    def mid_time(self, sol=None):
+        t = time.localtime( time.mktime(self.rds[0]['time']) + time.mktime(self.rds[-1]['time']) / 2 )
+        if sol is None:
+            return t
+        elif sol in ['h', 'hour']:
+            return t.tm_hour
+            
+    def orig_time(self, sol=None):
+        t = self.rds[0]['time']
+        if sol is None:
+            return t
+        elif sol in ['h', 'hour']:
+            return t.tm_hour
+        elif sol in ['wday', 'weekday']:
+            return t.tm_wday
+ 
+    def dest_time(self, sol=None):
+        t = self.rds[-1]['time']
+        if sol is None:
+            return t
+        elif sol in ['h', 'hour']:
+            return t.tm_hour
+        elif sol in ['wday', 'weekday']:
+            return t.tm_wday
+ 
     def summary(self):
         print "tid:",self.tid,"cuid:",self.cuid,"records number:",len(self.rds)
 

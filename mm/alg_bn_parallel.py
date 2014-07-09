@@ -3,11 +3,15 @@ import cctrack as ct
 import ccpath as cp
 import ccdagmodel as cdagm
 from ccdef import *
+from multiprocessing import Pool
+from math import floor
 
 gdag = None
 gpdag = list()
 ges = list()
 
+
+nproc = 3
 
 def prepare(gw):
     pass
@@ -45,20 +49,44 @@ def match(gw, track, debug = False, is_projs = True):
     p.smooth()
     return p
 
+def find_projs_of_rds(params):
+    gw = params[0]
+    rds = params[1]
+    r = params[2]
+
+    projss = []
+    for rd in rds:
+        lonlat_rd = rd['gps_lonlat']
+        projs = gw.find_projs_within(lonlat_rd, r)
+        if not len(projs) > 0:
+            projss.append(None)
+        else:
+            projss.append(projs)
+    return projss
+
 def create_dag(gw, track, r=0.1):
     dag = nx.DiGraph()
     rds = list(track.rds)
     projss = []
 
-    # for every gps-record in track, find its valid projection candidates
-    for rd in rds:
-        lonlat_rds = rd['gps_lonlat']
-        projs = gw.find_projs_within(lonlat_rds, r)
-        # if no projection candidates found, remove the gps-record from track
-        if not len(projs) > 0:
-            rds.remove(rd)
-        else:
-            projss.append(projs)
+    pool = Pool(processes = nproc)
+
+    params = []
+    np_rds = floor(len(rds)/nproc)
+    for i in range(0, nproc-1):
+        params.append((gw, rds[int(i*np_rds):int((i+1)*np_rds)], r))
+    params.append((gw, rds[int((nproc-1)*np_rds):], r))
+
+    results = pool.map(find_projs_of_rds, params)
+
+    i = 0
+    for result in results:
+        for projs in result:
+            if projs is None:
+                rds.remove(rds[i])
+            else:
+                projss.append(projs)
+            i += 1
     
     # for every projection candidate of every gps-record, add vertex to DAG
     for i in range(0,len(projss)):

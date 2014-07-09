@@ -221,6 +221,41 @@ def pdag2es(dag, p_dag):
 
     return tuple(es)
     
+def pdag2es_vs(dag, p_dag):
+    vds = dag.nodes(data = True)
+    vds_dict = {}
+    for vd in vds:
+        vds_dict[vd[0]] = vd[1]
+
+    es = []
+    v = p_dag[0]
+    e = (vds_dict[v]['s'], vds_dict[v]['t'])
+    es.append(e)
+
+    vs = [vds_dict[v],]
+
+    for i in range(1,len(p_dag)):
+        v = p_dag[i]
+        pv = p_dag[i-1]
+
+        vs.append(vds_dict[v])
+        
+        e = (vds_dict[v]['s'], vds_dict[v]['t'])
+        pe = es[-1]
+        if e == pe:
+            continue
+        else:
+            tmp_path = list(dag[pv][v]['path'])
+            while len(tmp_path) > 0:
+                if es[-1] != tmp_path[0]:
+                    break
+                else:
+                    tmp_path = tmp_path[1:]
+            es = es + tmp_path
+            if es[-1] != e:
+                es.append(e)
+    return [es, vs]
+
 
 def plot_dag(dag, withlabel = False):
     import matplotlib.pyplot as plt

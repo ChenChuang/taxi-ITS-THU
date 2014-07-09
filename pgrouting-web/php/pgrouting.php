@@ -1,5 +1,4 @@
 <?php
-
    // Database connection settings
    define("PG_DB"  , "beijing_routing");
    // define("PG_DB"  , "beijing_routing_cleared_a");
@@ -9,13 +8,12 @@
    define("TABLE",   "ways");
 
    // Retrieve start point
-   $start = split(' ',$_REQUEST['startpoint']);
+   $start = split(' ', $_REQUEST['startpoint']);
    $startPoint = array($start[0], $start[1]);
 
    // Retrieve end point
-   $end = split(' ',$_REQUEST['finalpoint']);
+   $end = split(' ', $_REQUEST['finalpoint']);
    $endPoint = array($end[0], $end[1]);
-   
 ?>
 
 <?php
