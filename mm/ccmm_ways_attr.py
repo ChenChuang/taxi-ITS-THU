@@ -15,8 +15,8 @@ import alg_ways_attr_time as alg
 # Second Round
 ICORE = 3
 
-TRACKS_FROM_TID = 2050001
-TRACKS_TO_TID =   2638410
+TRACKS_FROM_TID = 3500001
+TRACKS_TO_TID =   4561311
 
 
 gw = cg.new_gw()

@@ -118,3 +118,12 @@ $$
           WHERE $1[i] = $2
           LIMIT 1;
 $$ LANGUAGE sql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION intat(text, integer) RETURNS integer as $$
+DECLARE
+    arr integer[];
+BEGIN
+    select string_to_array($1, ',')::integer[] into arr;
+    return arr[$2];
+END;
+$$ LANGUAGE plpgsql VOLATILE;

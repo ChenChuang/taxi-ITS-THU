@@ -7,8 +7,8 @@ from common.data_parser import *
 import common.lib as lib
 import common.config as config
 
-from_cuid = 241
-to_cuid = 4000
+from_cuid = 4001
+to_cuid = 8000
 
 class Tracks2Postgres(object):
     

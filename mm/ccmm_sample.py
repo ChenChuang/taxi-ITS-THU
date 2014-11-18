@@ -13,10 +13,10 @@ import alg_iv as aiv
 import alg_ut as aut
 import alg_uti as auti
 
-algs = {'bn':abn, 'st':ast, 'iv':aiv, 'uti':auti}
-## algs = {'uti':auti}
-# intervals = [2,4,6,8]
-intervals = [10,12,14,16]
+## algs = {'bn':abn, 'st':ast, 'iv':aiv, 'ut':aut, 'uti':auti}
+algs = {'uti':auti}
+intervals = [2,4,6,8]
+# intervals = [10,12,14,16]
 
 track_tbname = "taxi_tracks_gt_1"
 path_tbname = "taxi_paths_gt_1"
@@ -63,7 +63,7 @@ def compare():
 
 
     global tids
-    tids = prd.get_all_tids()
+    # tids = prd.get_all_tids()
 
     global matched_length, missed_length, false_length
 

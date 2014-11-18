@@ -1,5 +1,7 @@
 library(RPostgreSQL)
 
+fontsize <- 2
+
 rank.avg.between <- function(a, b) {    
     drv <- dbDriver("PostgreSQL")
     conn <- dbConnect(drv, dbname="beijing_taxi", user="postgres")
@@ -64,9 +66,9 @@ hist.ranks.together <- function(df) {
     }
     # cols <- c(51,125,132,'red')
     cols <- c('chartreuse4','blue','darkorchid','red')
-    barplot(ma, beside=T, ylim=c(0,400), col=cols, xlab='Rank', ylab='Frequency', cex.lab=1.5, cex.axis=1.5) 
-    legend('topleft', legend=legends, fill=cols, border=F, bty="n", cex=1.5)
-    axis(1, at=seq(from=3,by=5,length.out=5), labels=c('1','2','3','4','5'), las=1, cex.axis=1.5)
+    barplot(ma, beside=T, ylim=c(0,400), col=cols, xlab='Rank', ylab='Frequency', cex.lab=fontsize, cex.axis=fontsize) 
+    legend('topleft', legend=legends, fill=cols, border=F, bty="n", cex=fontsize)
+    axis(1, at=seq(from=3,by=5,length.out=5), labels=c('1','2','3','4','5'), las=1, cex.axis=fontsize)
     box(bty = "o")
 }
 
@@ -110,9 +112,9 @@ hist.sample.avgd <- function(df) {
         }
     }
     cols <- c('grey','chartreuse4','blue','darkorchid','red')
-    barplot(ma, beside=F, xlim=c(0,13.3), ylim=c(0,35), col=cols, xlab='Sample Interval [km]', ylab='Number of Trajectories', cex.lab=1.5, cex.axis=1.5) 
-    legend('topright', legend=legends, fill=cols, border=F, bty="n", cex=1.5)
-    axis(1, at=seq(from=0.1,by=1.2,length.out=12), labels=as.character(breaks), las=1, cex.axis=1.5)
+    barplot(ma, beside=F, xlim=c(0,13.3), ylim=c(0,35), col=cols, xlab='Sample Interval [km]', ylab='Number of Trajectories', cex.lab=fontsize, cex.axis=fontsize) 
+    legend('topright', legend=legends, fill=cols, border=F, bty="n", cex=fontsize)
+    axis(1, at=seq(from=0.1,by=1.2,length.out=12), labels=as.character(breaks), las=1, cex.axis=fontsize)
     box(bty = "o")
 }
 
@@ -128,9 +130,9 @@ hist.sample.maxd <- function(df) {
         }
     }
     cols <- c('chartreuse4','blue','darkorchid','red')
-    barplot(ma, beside=F, ylim=c(0,25), col=cols, xlab='Max Interval [km]', ylab='Number', cex.lab=1.5, cex.axis=1.5) 
+    barplot(ma, beside=F, ylim=c(0,25), col=cols, xlab='Max Interval [km]', ylab='Number', cex.lab=fontsize, cex.axis=fontsize) 
     legend('topright', legend=legends, fill=cols, border=F, bty="n", cex=1.5)
-    axis(1, at=seq(from=0.1,by=2.4,length.out=6), labels=c('0','1','2','3','4','5'), las=1, cex.axis=1.5)
+    axis(1, at=seq(from=0.1,by=2.4,length.out=6), labels=c('0','1','2','3','4','5'), las=1, cex.axis=fontsize)
     box(bty = "o")
 }
 hist.interval <- function(df) {
@@ -140,8 +142,8 @@ hist.interval <- function(df) {
 hist.max_d <- function(df) {
     ah <- hist(df$max_d, breaks=50, plot=F)
     i <- ah$breaks[2]-ah$breaks[1]
-    barplot(ah$counts, col=('white'), beside=F, space=0, cex.lab=1.5, cex.axis=1.5, xlim=c(0,12)/i, ylim=c(0,70), ylab='Number of trajectories', xlab='Max interval [km]')
-    axis(1, at=seq(from=0,to=12/i,by=2/i), labels=c('0','2','4','6','8','10','12'), las=1, cex.axis=1.5)
+    barplot(ah$counts, col=('white'), beside=F, space=0, cex.lab=fontsize, cex.axis=fontsize, xlim=c(0,12)/i, ylim=c(0,70), ylab='Number of trajectories', xlab='Max interval [km]')
+    axis(1, at=seq(from=0,to=12/i,by=2/i), labels=c('0','2','4','6','8','10','12'), las=1, cex.axis=fontsize)
     box(bty = "o")
 }
 
@@ -242,7 +244,8 @@ plot.column <- function(df, col, yrange) {
     if(col == "false") {
         ylab <- "False Length Propotion"
     }
-    plot(xrange, yrange, xaxt="n", type="n", xlab="Subsampling rate", ylab = ylab, cex.lab=1.5, cex.axis=1.5) 
+
+    plot(xrange, yrange, xaxt="n", type="n", xlab="Subsampling rate", ylab = ylab, cex.lab=fontsize, cex.axis=fontsize, cex.main=fontsize, cex.sub=fontsize) 
     linetype <- c(6,2,1,4) 
     plotchar <- c(0, 1, 2, 15)
     cols <- c('chartreuse4','blue','darkorchid','red')
@@ -253,12 +256,12 @@ plot.column <- function(df, col, yrange) {
         lines(c(2,4,6,8), df[df$method == text[i], col]/s, type="b", lwd=2, col=cols[i], lty=linetype[i], pch=plotchar[i], xaxt='n', ann=F)
     }
     if(col == 'matched') {
-        legendx = xrange[2] - 2.7
+        legendx = xrange[2] - 3.3
     }else{
-        legendx = xrange[1]
+        legendx = xrange[1] - 0.2
     }
-    axis(1, at=c(2,4,6,8), labels=c('2','4','6','8'), las=1, cex.axis=1.5)
-    legend(legendx, yrange[2]+0.007, legend=legends, col=cols, pch=plotchar, lty=linetype, lwd=2, bty="n", cex=1.5)
+    axis(1, at=c(2,4,6,8), labels=c('2','4','6','8'), las=1, cex.axis=fontsize)
+    legend(legendx, yrange[2]+0.007, legend=legends, col=cols, pch=plotchar, lty=linetype, lwd=2, bty="n", cex=fontsize)
 }
 
 plot.column.maxd <- function(df, col, yrange) {
@@ -295,52 +298,58 @@ plot.false <- function(df) {
     plot.column(df, 'false', c(0.02,0.20))
 }
 
-if(F) {
+if(T) {
     # source("compare_mm.r")
 
     setEPS()
 
-    postscript("../../../paper/hist-ranks.eps", width=6, height=5)
+
+    postscript("../../../paper/dpm/hist-ranks.eps", width=6, height=5)
     df <- read.ranks()
     # hist.ranks(df,'bn')
     hist.ranks.together(df)
     dev.off()
 
-    postscript("../../../paper/ranks-avg.eps")
+    postscript("../../../paper/dpm/ranks-avg.eps")
     df <- read.ranks.avg()
     plot.ranks.avg(df)
     dev.off()
 
-    postscript("../../../paper/ranks-stddev.eps")
+    postscript("../../../paper/dpm/ranks-stddev.eps")
     df <- read.ranks.var()
     plot.ranks.var(df)
     dev.off()
 
-    postscript("../../../paper/matched.eps", width=8, height=8, horizontal = F, paper="special")
+    postscript("../../../paper/dpm/matched.eps", width=8, height=8, horizontal = F, paper="special")
     df <- read.precisions()
+    par(pin=c(6,6))
     plot.matched(df)
     dev.off()
 
-    postscript("../../../paper/missed.eps", width=8, height=8, horizontal = F, paper="special")
+    postscript("../../../paper/dpm/missed.eps", width=8, height=8, horizontal = F, paper="special")
+    par(pin=c(6,6))
     plot.missed(df)
     dev.off()
 
-    postscript("../../../paper/false.eps", width=8, height=8, horizontal = F, paper="special")
+    postscript("../../../paper/dpm/false.eps", width=8, height=8, horizontal = F, paper="special")
+    par(pin=c(6,6))
     plot.false(df)
     dev.off()
 
-    postscript("../../../paper/hist-maxd.eps", width=6, height=5)
+    postscript("../../../paper/dpm/hist-maxd.eps", width=6, height=5)
     df <- read.compare.tracks()
     hist.max_d(df)
     dev.off()
 
-    postscript("../../../paper/hist-sample-avgd.eps", width=8, height=8, horizontal = F, paper="special")
+    postscript("../../../paper/dpm/hist-sample-avgd.eps", width=8, height=8, horizontal = F, paper="special")
     df <- read.sample.attr(filename <- 'sample_avgd.txt') 
+    par(pin=c(6,6))
     hist.sample.avgd(df)
     dev.off()
 
-    postscript("../../../paper/hist-sample-len.eps")
+    postscript("../../../paper/dpm/hist-sample-len.eps")
     df <- read.sample.attr(filename <- 'sample_len.txt') 
+    par(pin=c(6,6))
     hist.sample.len(df)
     dev.off()
 }

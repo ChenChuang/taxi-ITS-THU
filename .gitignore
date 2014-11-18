@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # python
 
 *.py[cod]
@@ -37,7 +36,6 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
-<<<<<<< HEAD
 
 # R
 *.RData
@@ -93,5 +91,3 @@ base/.svn/
 *.log
 *.txt
 
-=======
->>>>>>> cb0fc2956b2243255831c71b7672adf3412790ab
