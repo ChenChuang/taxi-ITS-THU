@@ -8,7 +8,9 @@ import common.config
 DB_YEAR = "2009"
 
 try:
-	conn = MySQLdb.connect(host=mysql_hostname,user=mysql_username,passwd=getpass.getpass("db password: "),db=mysql_dbname,local_infile=1)  
+    if not mysql_passwd:
+        mysql_passwd = getpass.getpass("db password: ")
+	conn = MySQLdb.connect(host = mysql_hostname, user = mysql_username, passwd = mysql_passwd, db = mysql_dbname, local_infile = 1)
 	cursor = conn.cursor()
 
 	all_f = os.listdir(txt_data_dir)

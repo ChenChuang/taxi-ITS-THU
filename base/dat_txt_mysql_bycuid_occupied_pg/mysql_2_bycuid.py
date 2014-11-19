@@ -10,10 +10,9 @@ todate = (2009,5,30)
 
 tbnames = lib.dates_to_tbnames(fromdate, todate)
 
-if mysql_passwd:
-	conn = MySQLdb.connect(host=mysql_hostname,user=mysql_username,passwd=mysql_passwd,db=mysql_dbname)
-else:
-	conn = MySQLdb.connect(host=mysql_hostname,user=mysql_username,passwd=getpass.getpass("db password: "),db=mysql_dbname)  
+if not mysql_passwd:
+    mysql_passwd = getpass.getpass("db password: ")
+conn = MySQLdb.connect(host = mysql_hostname, user = mysql_username, passwd = mysql_passwd, db = mysql_dbname)
 cursor = conn.cursor()
 
 print "mysql connected."

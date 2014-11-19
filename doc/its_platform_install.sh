@@ -48,7 +48,7 @@ wget http://bretth.dev.openstreetmap.org/osmosis-build/osmosis-latest.tgz
 tar -xfz osmosis-latest.tgz
 cd osmosis-latest/bin
 ./osmosis \
-    --read-pbf file="/home/chenchuang/Downloads/china-latest.osm.pbf" \
+    --read-pbf file="china-latest.osm.pbf" \
     --bounding-polygon file="beijing_v.txt" \
     --write-xml file="beijing-2.osm"
 
@@ -137,7 +137,7 @@ wtr.allow.junction.roundabout = car
 ---------------------------------------------------
 
 # transform OpenStreetMap data file to SQL file
-java -Xmx512m -jar osm2po-core-4.7.7-signed.jar prefix=hh tileSize=x /home/chenchuang/beijing_osm/beijing-2.osm
+java -Xmx512m -jar osm2po-core-4.7.7-signed.jar prefix=hh tileSize=x beijing-2.osm
 # login as postgres user (default user created by postgres installation)
 su postgres
 # login postgres
@@ -207,6 +207,38 @@ sudo /etc/init.d/apache2 restart
 
 # ---- END of install pgrouting ----
 
+
+
+
+# ---- install lib ----
+
+# Python 2.7.3
+MySQLdb, getpass, psycopg2, networkx, rtree
+numpy, scipy
+pprocess
+
+# Javascript
+jquery-1.8.0
+OpenLayers-2.13-dev.js
+jquery.ratyi-2.5.2.js
+jquery.json-2.4.js
+
+# R 3.0.1
+download R source package
+./configure
+make
+./bin/R
+# R packages
+DBI, RMySQL, PostgreSQL
+ggplot2, grid, Hmisc, xts
+
+# ---- END of install lib ----
+
+
+
+
 # install tracks table
 
 # install paths table
+
+
