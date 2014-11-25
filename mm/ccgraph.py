@@ -60,15 +60,9 @@ class GraphWrapper(object):
     def oneway_ways_num(self):
         return self.__oneway_ways_num
 
-    def create_graph(self):
-        self.G = nx.DiGraph()
-        self.st = {}
-
-        self.__ways_num = 0
-        self.__oneway_ways_num = 0
-
+    def ways_source_local(self):
         if not self.open_db():
-            return False
+            return
         sql = '''select id, 
                  osm_id, osm_source_id, osm_target_id, 
                  clazz, flags, 
@@ -78,12 +72,25 @@ class GraphWrapper(object):
                  x1, y1, x2, y2, 
                  st_astext(geom_way) as geom from ways'''
         self.cursor.execute(sql)
-
         while True:
             row = self.cursor.fetchone()
             if row == None:
                 break
+            yield row
 
+    def create_graph(self):
+        self.G = nx.DiGraph()
+        self.st = {}
+
+        self.__ways_num = 0
+        self.__oneway_ways_num = 0
+
+        try:
+            data_source = self.kwargs['source']
+        except KeyError, e:
+            data_source = self.ways_source_local()
+        
+        for row in data_source:
             way_id = int(row['id'])
             #osm_id = long(row['osm_id'])
             #osm_s_id = long(row['osm_source_id'])

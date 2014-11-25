@@ -1,10 +1,96 @@
-# ---- install postgis ----
-# OFFICIAL DOC: http://trac.osgeo.org/postgis/wiki/UsersWikiPostGIS21Ubuntu1204src 
-# more info: http://trac.osgeo.org/postgis/ and http://postgis.net/ 
+# ---- install ubuntu 12.04 ----
 
-# Prerequisites
-sudo apt-get install build-essential postgresql-9.1 postgresql-server-dev-9.1 
+# install ssh
+sudo apt-get install openssh-client, openssh-server
+/etc/init.d/ssh start
+
+# install python
+sudo apt-get install python-dev
+
+# install scipy, numpy
+sudo apt-get install scipy numpy
+
+# install postgresql
+sudo apt-get install libpq-dev
+
+cd Downloads
+
+wget http://initd.org/psycopg/tarballs/PSYCOPG-2-5/psycopg2-2.5.4.tar.gz
+tar xfz psycopg2-2.5.4.tar.gz
+cd psycopg2-2.5.4
+python setup.py build
+sudo python setup.py install
+cd ..
+
+# install setuptools
+wget https://bootstrap.pypa.io/ez_setup.py -O - | sudo python
+
+# install networkx
+wget https://pypi.python.org/packages/source/n/networkx/networkx-1.9.1.tar.gz
+tar xfz networkx-1.9.1.tar.gz
+cd networkx-1.9.1
+python setup.py build
+sudo python setup.py install
+cd ..
+
+# install g++
+sudo apt-get install g++
+
+# install spatialindex
+wget http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz
+tar xfz spatialindex-src-1.8.5.tar.gz
+cd spatialindex-src-1.8.5
+./configure
+make
+sudo make install
+sudo ldconfig
+cd ..
+
+# install rtree
+wget https://pypi.python.org/packages/source/R/Rtree/Rtree-0.8.2.tar.gz
+tar xfz Rtree-0.8.2.tar.gz
+cd Rtree-0.8.2
+sudo python setup.py install
+cd ..
+
+cd ..
+
+# ---- END of install ubuntu 12.04 ----
+
+
+
+# ---- install database ----
+
+# install postgresql
+# http://www.postgresql.org/download/linux/ubuntu/
+sudo vim /etc/apt/sources.list.d/pgdg.list
+add "deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main"
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+sudo apt-get update
+sudo apt-get install postgresql-9.3 postgresql-client-9.3 postgresql-contrib-9.3 libpq-dev postgresql-server-dev-9.3
 sudo apt-get install libxml2-dev libproj-dev libjson0-dev xsltproc docbook-xsl docbook-mathml libgdal1-dev
+sudo su postgres
+vim /etc/postgresql/9.3/main/pg_hba.conf
+modify "local all postgres peer" to "local all postgres trust"
+exit
+psql -U postgres
+# move psql database to home
+sudo /etc/init.d/postgresql stop
+cd ~/Workspace
+mkdir psql_db
+chown -R postgres:postgres psql_db
+sudo su postgres
+cp -aRv /var/lib/postgresql/9.3/main psql_db
+cd /var/lib/postgresql/9.3/
+mv main main_backup
+exit
+sudo vim /etc/postgresql/9.3/main/postgres.conf
+modify "data_directory = '/var/lib/postgresql/9.3/main'" to "data_directory = '/home/chenchuang/Workspace/psql_db/main'"
+sudo /etc/init.d/postgresql start
+sudo su postgres
+cd /var/lib/postgresql/9.3/
+rm main_backup
+exit
 # Build GEOS 3.3.x
 wget http://download.osgeo.org/geos/geos-3.3.9.tar.bz2
 tar xfj geos-3.3.9.tar.bz2
@@ -13,10 +99,18 @@ cd geos-3.3.9
 make
 sudo make install
 cd ..
+# install GDAL
+cd gdal-1.10.0
+./configure
+make
+sudo make install
 # Build PostGIS
-wget http://download.osgeo.org/postgis/source/postgis-2.0.6.tar.gz
-tar -xfz postgis-2.0.6.tar.gz
-cd postgis-2.0.6
+# http://trac.osgeo.org/postgis/wiki/UsersWikiPostGIS21Ubuntu1204src 
+# more info: http://trac.osgeo.org/postgis/ and http://postgis.net/ 
+
+wget http://download.osgeo.org/postgis/source/postgis-2.1.4.tar.gz
+tar xfz postgis-2.1.4.tar.gz
+cd postgis-2.1.4
 ./configure
 make
 sudo make install
@@ -43,9 +137,9 @@ echo 'beijing_v
     115.711    39.519
 END
 END' > beijing_v.txt
-# OFFICIAL DOC: http://wiki.openstreetmap.org/wiki/Osmosis
+# http://wiki.openstreetmap.org/wiki/Osmosis
 wget http://bretth.dev.openstreetmap.org/osmosis-build/osmosis-latest.tgz
-tar -xfz osmosis-latest.tgz
+tar xfz osmosis-latest.tgz
 cd osmosis-latest/bin
 ./osmosis \
     --read-pbf file="china-latest.osm.pbf" \
@@ -60,7 +154,7 @@ cd osmosis-latest/bin
 
 # ---- extract map for taxi ----
 
-# OFFICIAL DOC: http://osm2po.de/
+#  http://osm2po.de/
 # download osm2po
 wget http://osm2po.de/download.php?lnk=osm2po-4.7.7.zip
 unzip osm2po-4.7.7.zip
@@ -168,7 +262,7 @@ alter table hh_2po_4pgr rename to ways;
 # ---- build pgrouting2.0 web application ----
 
 # install pgrouting
-# OFFICIAL DOC: http://docs.pgrouting.org/2.0/en/doc/index.html
+# http://docs.pgrouting.org/2.0/en/doc/index.html
 git clone https://github.com/pgRouting/pgrouting.git
 mkdir build
 cd build
@@ -176,12 +270,12 @@ cmake  ..
 make
 sudo make install
 # build web app
-# OFFICIAL DOC: http://docs.pgrouting.org/2.0/en/doc/src/tutorial/tutorial.html
+# http://docs.pgrouting.org/2.0/en/doc/src/tutorial/tutorial.html
 createdb beijing_routing
 psql beijing_routing -c "create extension postgis"
 psql beijing_routing -c "create extension pgrouting"
 # import OpenStreetMap data to pgrouting database
-# OFFICIAL DOC: http://pgrouting.org/docs/tools/osm2pgrouting.html
+# http://pgrouting.org/docs/tools/osm2pgrouting.html
 git clone https://github.com/pgRouting/osm2pgrouting.git
 cd osm2pgrouting
 make
@@ -191,11 +285,11 @@ make
                 -user postgres \
                -clean
 # create topology table
-# OFFICIAL DOC: http://docs.pgrouting.org/2.0/en/doc/src/tutorial/tutorial.html
+# http://docs.pgrouting.org/2.0/en/doc/src/tutorial/tutorial.html
 psql -U postgres -d beijing_routing
 select pgr_createTopology('ways', 0.000001);
 # create web app
-# OFFICIAL DOC: http://docs.pgrouting.org/2.0/en/doc/src/tutorial/tutorial.html
+# http://docs.pgrouting.org/2.0/en/doc/src/tutorial/tutorial.html
 # workshop of pgrouting2.0 is TBD
 # workshop of pgrouting1.x can be found at http://workshop.pgrouting.org/chapters/installation.html (maybe 2.0 is cool with this...) 
 # or see my job at ~/Workspace/ITSproject/pgrouting-web using php web-server
@@ -213,7 +307,8 @@ sudo /etc/init.d/apache2 restart
 # ---- install lib ----
 
 # Python 2.7.3
-MySQLdb, getpass, psycopg2, networkx, rtree
+MySQLdb, getpass, 
+psycopg2, networkx, rtree
 numpy, scipy
 pprocess
 
@@ -242,3 +337,25 @@ ggplot2, grid, Hmisc, xts
 # install paths table
 
 
+
+
+# ---- install go ----
+
+wget http://golangtc.com/static/go/go1.3.3.linux-386.tar.gz
+sudo tar -C /usr/local -xzf go1.3.3.linux-386.tar.gz
+add "export PATH=$PATH:/usr/local/go/bin" to /etc/profile
+
+# add syntax highlight in vim
+cp -R /usr/local/go/misc/vim/syntax ~/.vim/syntax
+cp -R /usr/local/go/misc/vim/autoload ~/.vim/autoload
+cp -R /usr/local/go/misc/vim/ftdetect ~/.vim/ftdetect
+add "set rtp+=/usr/local/go/misc/vim
+filetype plugin on" to ~/.vimrc
+
+# install postgresql package
+mkdir ~/.go
+export GOPATH=$HOME/.go
+go get github.com/lib/pq
+
+
+# ---- END of install go ----

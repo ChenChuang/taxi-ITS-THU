@@ -36,6 +36,8 @@ def match(gw, track, debug = False):
         if p is None:
             print 'failed creating Path instance'
             return None
+    except (KeyboardInterrupt, SystemExit):
+        raise KeyboardInterrupt
     except:
         return None
 

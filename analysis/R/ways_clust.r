@@ -53,14 +53,14 @@ load.var <- function(filename) {
 save.ways.sf.by.hour <- function() {
     for(h in 0:23) {
         ways.sf <- read.ways.sf(h)
-        save(ways.sf, file=sprintf("ways_sf_h%02d.RData", h))
+        save(ways.sf, file=sprintf("rdata_hour/ways_sf_h%02d.RData", h))
     }
 }
 
 read.ways.sf.by.hours <- function(from_h, to_h) {
     ways.sf <- NA
     for(h in from_h:to_h) {
-        tmp.sf <- load.var(sprintf("ways_sf_h%02d.RData", h))
+        tmp.sf <- load.var(sprintf("rdata_hour/ways_sf_h%02d.RData", h))
         ways.num <- length(tmp.sf)
         if(is.na(ways.sf)) {
             ways.sf <- tmp.sf
@@ -896,6 +896,13 @@ heat.map <- function() {
     myMap
 }
 
+
+compute.save.all <- function() {
+    save.ways.sf.by.hour()
+    # mat.sf <- read.mat.sf()
+    # som.iter.res <- som.sf.iter(mat.sf)
+    # save(som.iter.res, file="res10.RData")
+}
 
 if(F) {
     setEPS()
